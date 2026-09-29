@@ -230,13 +230,13 @@
                                                 Time-based pricing available
                                             </div>
                                             <div class="text-2xl font-bold text-purple-600">Starting at ₱{{ number_format(min($package->price_morning ?? $package->price, $package->price_afternoon ?? $package->price, $package->price_evening ?? $package->price), 0) }}</div>
-                                            @if($package->inclusions && count($package->inclusions) > 0)
+                                            @if(count($package->inclusion_labels) > 0)
                                             <div class="flex items-center justify-between mt-2">
                                                 <div class="text-xs text-gray-500">
                                                     <i class="fas fa-check-circle text-green-500 mr-1"></i>
-                                                    {{ count($package->inclusions) }} inclusions
+                                                    {{ count($package->inclusion_labels) }} inclusions
                                                 </div>
-                                                <button onclick="showPackageInclusions({{ $package->id }}, '{{ $package->name }}', {{ json_encode($package->inclusions) }})" class="text-xs text-purple-600 hover:text-purple-800 font-medium underline">
+                                                <button onclick="showPackageInclusions({{ $package->id }}, '{{ $package->name }}', {{ json_encode($package->inclusion_labels) }})" class="text-xs text-purple-600 hover:text-purple-800 font-medium underline">
                                                     View Details
                                                 </button>
                                             </div>
@@ -269,13 +269,13 @@
                                                 <i class="fas fa-clock text-purple-500 mr-1"></i>
                                                 Select time slot after choosing
                                             </div>
-                                            @if($package->inclusions && count($package->inclusions) > 0)
+                                            @if(count($package->inclusion_labels) > 0)
                                             <div class="flex items-center justify-between mt-2">
                                                 <div class="text-xs text-gray-500">
                                                     <i class="fas fa-check-circle text-green-500 mr-1"></i>
-                                                    {{ count($package->inclusions) }} inclusions
+                                                    {{ count($package->inclusion_labels) }} inclusions
                                                 </div>
-                                                <button onclick="showPackageInclusions({{ $package->id }}, '{{ $package->name }}', {{ json_encode($package->inclusions) }})" class="text-xs text-purple-600 hover:text-purple-800 font-medium underline">
+                                                <button onclick="showPackageInclusions({{ $package->id }}, '{{ $package->name }}', {{ json_encode($package->inclusion_labels) }})" class="text-xs text-purple-600 hover:text-purple-800 font-medium underline">
                                                     View Details
                                                 </button>
                                             </div>

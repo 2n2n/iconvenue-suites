@@ -40,6 +40,24 @@ class VenuePackage extends Model
     }
 
     /**
+     * Add-ons included free with this package (as opposed to paid extras
+     * selected on a booking).
+     */
+    public function addons()
+    {
+        return $this->belongsToMany(VenueAddon::class, 'package_addon_inclusions', 'venue_package_id', 'venue_addon_id')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Combined display list: catalog add-on names + free-text inclusions.
+     */
+    public function getInclusionLabelsAttribute(): array
+    {
+        return array_merge($this->addons->pluck('name')->all(), $this->inclusions ?? []);
+    }
+
+    /**
      * Get the price for a specific time slot
      */
     public function getPriceForTimeSlot($timeSlot = null)

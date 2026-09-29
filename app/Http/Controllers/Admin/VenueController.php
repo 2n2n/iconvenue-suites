@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Venue;
+use App\Models\VenueAddon;
 use App\Traits\HandlesImageUploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -215,7 +216,8 @@ class VenueController extends Controller
     public function packages(Venue $venue)
     {
         $packages = $venue->packages()->orderBy('name')->get();
-        return view('admin.venues.packages', compact('venue', 'packages'));
+        $addons = VenueAddon::active()->orderBy('category')->orderBy('sort_order')->get();
+        return view('admin.venues.packages', compact('venue', 'packages', 'addons'));
     }
 
     public function storePackage(Request $request, Venue $venue)
@@ -228,11 +230,11 @@ class VenueController extends Controller
             'price_morning' => 'nullable|numeric|min:0',
             'price_afternoon' => 'nullable|numeric|min:0',
             'price_evening' => 'nullable|numeric|min:0',
-            'inclusions' => 'nullable|array',
-            'inclusions.*' => 'string'
+            'addon_ids' => 'nullable|array',
+            'addon_ids.*' => 'exists:venue_addons,id'
         ]);
 
-        $venue->packages()->create([
+        $package = $venue->packages()->create([
             'name' => $request->name,
             'description' => $request->description,
             'price' => $request->price,
@@ -240,9 +242,10 @@ class VenueController extends Controller
             'price_morning' => $request->price_morning,
             'price_afternoon' => $request->price_afternoon,
             'price_evening' => $request->price_evening,
-            'inclusions' => $request->inclusions ?? [],
             'is_active' => true
         ]);
+
+        $package->addons()->sync($request->addon_ids ?? []);
 
         return redirect()->route('admin.venues.packages', $venue)
             ->with('success', 'Package added successfully!');
@@ -258,8 +261,8 @@ class VenueController extends Controller
             'price_morning' => 'nullable|numeric|min:0',
             'price_afternoon' => 'nullable|numeric|min:0',
             'price_evening' => 'nullable|numeric|min:0',
-            'inclusions' => 'nullable|array',
-            'inclusions.*' => 'string'
+            'addon_ids' => 'nullable|array',
+            'addon_ids.*' => 'exists:venue_addons,id'
         ]);
 
         $package->update([
@@ -269,9 +272,10 @@ class VenueController extends Controller
             'has_time_based_pricing' => $request->has_time_based_pricing ?? false,
             'price_morning' => $request->price_morning,
             'price_afternoon' => $request->price_afternoon,
-            'price_evening' => $request->price_evening,
-            'inclusions' => $request->inclusions ?? []
+            'price_evening' => $request->price_evening
         ]);
+
+        $package->addons()->sync($request->addon_ids ?? []);
 
         return redirect()->route('admin.venues.packages', $venue)
             ->with('success', 'Package updated successfully!');
@@ -304,6 +308,7 @@ class VenueController extends Controller
             'price_morning' => $package->price_morning,
             'price_afternoon' => $package->price_afternoon,
             'price_evening' => $package->price_evening,
+            'addon_ids' => $package->addons->pluck('id'),
             'inclusions' => $package->inclusions ?? [],
             'is_active' => $package->is_active
         ]);

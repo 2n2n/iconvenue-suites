@@ -77,11 +77,6 @@
             box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.1);
         }
 
-        .quantity-btn:read-only {
-            background-color: #f3f4f6;
-            cursor: not-allowed;
-        }
-        
         /* Prevent button from submitting form */
         .quantity-btn[type="button"] {
             background: #e5e7eb;

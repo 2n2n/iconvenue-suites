@@ -25,16 +25,19 @@
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Capacity *</label>
-                <input type="number" name="capacity" value="{{ old('capacity', $venue->capacity) }}" required min="1"
+                <input type="number" name="capacity" id="capacity" value="{{ old('capacity', $venue->capacity) }}" required min="1"
+                    oninput="updatePerHeadPrice()"
                     class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
             </div>
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Full Day Price *</label>
                 <input type="number" name="price_per_day" id="price_per_day" value="{{ old('price_per_day', $venue->price_per_day) }}" required min="0" step="0.01"
+                    oninput="updatePerHeadPrice()"
                     class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
                     placeholder="0.00">
                 <p class="text-xs text-gray-500 mt-1" id="pricePerDayNote">Price for a full-day rental. This is separate from time-slot pricing below.</p>
+                <p class="text-xs text-purple-600 font-medium mt-1" id="perHeadPriceDisplay">Per head: ₱0.00</p>
             </div>
         </div>
 
@@ -125,7 +128,19 @@
 </div>
 
 <script>
+function updatePerHeadPrice() {
+    const capacity = parseFloat(document.getElementById('capacity').value) || 0;
+    const price = parseFloat(document.getElementById('price_per_day').value) || 0;
+    const display = document.getElementById('perHeadPriceDisplay');
+    const perHead = capacity > 0 ? price / capacity : 0;
+    display.textContent = capacity > 0
+        ? `Per head (based on ${capacity} pax capacity): ₱${perHead.toFixed(2)}`
+        : 'Per head: enter capacity to calculate';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    updatePerHeadPrice();
+
     const typeSelect = document.getElementById('typeSelect');
     const nameLabel = document.getElementById('nameLabel');
     const timePricingFields = document.getElementById('timePricingFields');

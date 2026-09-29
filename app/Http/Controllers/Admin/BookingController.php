@@ -535,8 +535,15 @@ class BookingController extends Controller
         $month = max(1, min(12, $month));
         $year = max(2020, min(2030, $year));
 
-        $start = Carbon::createFromDate($year, $month, 1)->startOfMonth();
-        $end = $start->copy()->endOfMonth();
+        $monthAnchor = Carbon::createFromDate($year, $month, 1);
+        $today = Carbon::today();
+        $isCurrentMonth = $year === (int) $today->year && $month === (int) $today->month;
+
+        // For the current month, start the grid at today instead of the 1st
+        // so the admin sees today's date first without having to scroll past
+        // days that have already passed.
+        $start = $isCurrentMonth ? $today->copy() : $monthAnchor->copy()->startOfMonth();
+        $end = $monthAnchor->copy()->endOfMonth();
 
         $venues = Venue::where('is_active', true)->orderBy('type')->orderBy('name')->get();
 
@@ -630,9 +637,9 @@ class BookingController extends Controller
         return response()->json([
             'year' => $year,
             'month' => $month,
-            'month_name' => $start->format('F Y'),
-            'prev' => ['year' => $start->copy()->subMonth()->year, 'month' => $start->copy()->subMonth()->month],
-            'next' => ['year' => $start->copy()->addMonth()->year, 'month' => $start->copy()->addMonth()->month],
+            'month_name' => $monthAnchor->format('F Y'),
+            'prev' => ['year' => $monthAnchor->copy()->subMonth()->year, 'month' => $monthAnchor->copy()->subMonth()->month],
+            'next' => ['year' => $monthAnchor->copy()->addMonth()->year, 'month' => $monthAnchor->copy()->addMonth()->month],
             'venues' => $venues->map(fn ($v) => [
                 'id' => $v->id,
                 'name' => $v->name,

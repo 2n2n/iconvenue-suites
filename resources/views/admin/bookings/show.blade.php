@@ -150,8 +150,8 @@
                                 @if($payment->verifiedBy) by {{ $payment->verifiedBy->name }}@endif
                             </p>
                             @endif
-                            @if($payment->status == 'rejected' && $payment->notes)
-                            <p class="text-xs text-red-600 mt-1"><i class="fas fa-info-circle"></i> {{ $payment->notes }}</p>
+                            @if($payment->notes)
+                            <p class="text-xs {{ $payment->status == 'rejected' ? 'text-red-600' : 'text-gray-600' }} mt-1"><i class="fas fa-info-circle"></i> {{ $payment->notes }}</p>
                             @endif
                         </div>
                         <div class="text-right">

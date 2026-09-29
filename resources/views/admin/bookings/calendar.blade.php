@@ -212,6 +212,17 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+// Safe to drop straight into an inline onclick="..." attribute: produces a
+// valid JS string literal (via JSON.stringify), then escapes the characters
+// that would otherwise break out of the surrounding HTML attribute.
+function jsAttr(str) {
+    return JSON.stringify(String(str))
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 async function loadCalendar() {
     document.getElementById('calendarLoading').classList.remove('hidden');
     document.getElementById('calendarTable').classList.add('hidden');
@@ -309,7 +320,7 @@ function renderDayCell(day, venue, bookings, availability) {
     let html = `<td class="px-1 py-1 border-b border-r align-top min-h-12 ${todayCls} ${bgCls} ${canBook ? 'group cursor-pointer' : ''}"`;
 
     if (canBook) {
-        html += ` onclick="openCreateBooking('${day.date}', ${venue.id}, '${escapeHtml(venue.name).replace(/'/g, "\\'")}')"`;
+        html += ` onclick="openCreateBooking('${day.date}', ${venue.id}, ${jsAttr(venue.name)})"`;
     }
 
     html += '>';
@@ -470,5 +481,25 @@ loadCalendar();
 .booking-chip { cursor: pointer; border: none; display: block; min-width: 0; }
 .booking-chip:hover { transform: scale(1.02); }
 .booking-chip span { pointer-events: none; }
+
+/* Wider, more visible horizontal scrollbar */
+#calendarWrap {
+    scrollbar-width: auto;
+    scrollbar-color: #a855f7 #f3f4f6;
+}
+#calendarWrap::-webkit-scrollbar {
+    height: 16px;
+}
+#calendarWrap::-webkit-scrollbar-track {
+    background: #f3f4f6;
+}
+#calendarWrap::-webkit-scrollbar-thumb {
+    background-color: #a855f7;
+    border-radius: 8px;
+    border: 3px solid #f3f4f6;
+}
+#calendarWrap::-webkit-scrollbar-thumb:hover {
+    background-color: #9333ea;
+}
 </style>
 @endsection

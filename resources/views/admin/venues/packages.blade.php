@@ -28,9 +28,6 @@
             <div class="flex justify-between items-start mb-4">
                 <div>
                     <h3 class="text-xl font-bold text-gray-800">{{ $package->name }}</h3>
-                    @if(!$package->is_active)
-                    <span class="text-xs bg-gray-500 text-white px-2 py-1 rounded-full">Inactive</span>
-                    @endif
                     @if($package->hasTimeBasedPricing())
                     <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full ml-1">
                         <i class="fas fa-clock mr-1"></i>Time-based
@@ -90,11 +87,11 @@
             </div>
             @endif
 
-            @if($package->inclusions && count($package->inclusions) > 0)
+            @if(count($package->inclusion_labels) > 0)
             <div class="mb-4">
                 <p class="font-semibold text-gray-700 text-sm mb-2">Inclusions:</p>
                 <ul class="text-sm text-gray-600 space-y-1">
-                    @foreach($package->inclusions as $inclusion)
+                    @foreach($package->inclusion_labels as $inclusion)
                     <li><i class="fas fa-check text-green-500 mr-2"></i>{{ $inclusion }}</li>
                     @endforeach
                 </ul>
@@ -110,8 +107,8 @@
                 <form action="{{ route('admin.venues.packages.toggle', [$venue, $package]) }}" method="POST" class="flex-1">
                     @csrf
                     @method('PATCH')
-                    <button type="submit" class="w-full bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition text-sm">
-                        <i class="fas fa-toggle-{{ $package->is_active ? 'on' : 'off' }} mr-1"></i>Toggle
+                    <button type="submit" class="w-full {{ $package->is_active ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' }} text-white px-4 py-2 rounded transition text-sm">
+                        <i class="fas fa-toggle-{{ $package->is_active ? 'on' : 'off' }} mr-1"></i>{{ $package->is_active ? 'Active' : 'Inactive' }}
                     </button>
                 </form>
                 
@@ -175,7 +172,7 @@
                     <div class="flex items-center justify-between mb-4">
                         <label class="block text-gray-700 font-semibold">Time-Based Pricing (Optional)</label>
                         <label class="flex items-center cursor-pointer">
-                            <input type="checkbox" id="hasTimeBasedPricing" name="has_time_based_pricing" value="1" 
+                            <input type="checkbox" id="hasTimeBasedPricing" name="has_time_based_pricing" value="1"
                                    onchange="toggleTimeBasedPricing()"
                                    class="mr-2 w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
                             <span class="text-sm text-gray-600">Enable time-based pricing</span>
@@ -217,17 +214,23 @@
                 </div>
 
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Inclusions</label>
-                    <div id="inclusionsContainer">
-                        <div class="flex space-x-2 mb-2">
-                            <input type="text" name="inclusions[]" placeholder="e.g., Tables and chairs"
-                                class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
-                            <button type="button" onclick="addInclusion()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
+                    <label class="block text-gray-700 font-semibold mb-2">Add-ons included with this package</label>
+                    <p class="text-xs text-gray-500 mb-2">Check any items from your Add-ons catalog that come free with this package. The same add-on can still be sold separately elsewhere.</p>
+                    @if($addons->count() > 0)
+                    <div class="grid sm:grid-cols-2 gap-1 max-h-48 overflow-y-auto border rounded-lg p-3">
+                        @foreach($addons as $addon)
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" name="addon_ids[]" value="{{ $addon->id }}"
+                                class="mr-2 w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            {{ $addon->name }}
+                        </label>
+                        @endforeach
                     </div>
+                    @else
+                    <p class="text-sm text-gray-500 italic">No add-ons in your catalog yet — add some under Admin &gt; Add-ons to include them here.</p>
+                    @endif
                 </div>
+
             </div>
 
             <div class="mt-6 flex space-x-4">
@@ -323,12 +326,22 @@
                 </div>
 
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Inclusions</label>
-                    <div id="editInclusionsContainer"></div>
-                    <button type="button" onclick="addEditInclusion()" class="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm">
-                        <i class="fas fa-plus mr-1"></i>Add Inclusion
-                    </button>
+                    <label class="block text-gray-700 font-semibold mb-2">Add-ons included with this package</label>
+                    <p class="text-xs text-gray-500 mb-2">Check any items from your Add-ons catalog that come free with this package. The same add-on can still be sold separately elsewhere.</p>
+                    @if($addons->count() > 0)
+                    <div id="editAddonsContainer" class="grid sm:grid-cols-2 gap-1 max-h-48 overflow-y-auto border rounded-lg p-3">
+                        @foreach($addons as $addon)
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" name="addon_ids[]" value="{{ $addon->id }}" class="edit-addon-checkbox mr-2 w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            {{ $addon->name }}
+                        </label>
+                        @endforeach
+                    </div>
+                    @else
+                    <p class="text-sm text-gray-500 italic">No add-ons in your catalog yet — add some under Admin &gt; Add-ons to include them here.</p>
+                    @endif
                 </div>
+
             </div>
 
             <div class="mt-6 flex space-x-4">
@@ -369,34 +382,6 @@ function toggleEditTimeBasedPricing() {
     }
 }
 
-function addInclusion() {
-    const container = document.getElementById('inclusionsContainer');
-    const div = document.createElement('div');
-    div.className = 'flex space-x-2 mb-2';
-    div.innerHTML = `
-        <input type="text" name="inclusions[]" placeholder="e.g., Sound system"
-            class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-            <i class="fas fa-minus"></i>
-        </button>
-    `;
-    container.appendChild(div);
-}
-
-function addEditInclusion() {
-    const container = document.getElementById('editInclusionsContainer');
-    const div = document.createElement('div');
-    div.className = 'flex space-x-2 mb-2';
-    div.innerHTML = `
-        <input type="text" name="inclusions[]" placeholder="e.g., Sound system"
-            class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-            <i class="fas fa-minus"></i>
-        </button>
-    `;
-    container.appendChild(div);
-}
-
 function editPackage(id, name, description, price, inclusions) {
     // Fetch package data including time-based pricing
     fetch(`/admin/venues/{{ $venue->id }}/packages/${id}/data`)
@@ -406,7 +391,7 @@ function editPackage(id, name, description, price, inclusions) {
             document.getElementById('edit_name').value = data.name;
             document.getElementById('edit_description').value = data.description || '';
             document.getElementById('edit_price').value = data.price;
-            
+
             // Set time-based pricing fields
             const hasTimePricing = data.has_time_based_pricing || (data.price_morning || data.price_afternoon || data.price_evening);
             document.getElementById('edit_hasTimeBasedPricing').checked = hasTimePricing;
@@ -420,26 +405,13 @@ function editPackage(id, name, description, price, inclusions) {
             document.getElementById('edit_price_morning').value = data.price_morning || '';
             document.getElementById('edit_price_afternoon').value = data.price_afternoon || '';
             document.getElementById('edit_price_evening').value = data.price_evening || '';
-            
-            // Set inclusions
-            const container = document.getElementById('editInclusionsContainer');
-            container.innerHTML = '';
-            
-            if (data.inclusions && data.inclusions.length > 0) {
-                data.inclusions.forEach(inclusion => {
-                    const div = document.createElement('div');
-                    div.className = 'flex space-x-2 mb-2';
-                    div.innerHTML = `
-                        <input type="text" name="inclusions[]" value="${inclusion}"
-                            class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
-                        <button type="button" onclick="this.parentElement.remove()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                    `;
-                    container.appendChild(div);
-                });
-            }
-            
+
+            // Set included add-ons (uncheck all first, since this modal is reused for every package)
+            const addonIds = (data.addon_ids || []).map(String);
+            document.querySelectorAll('.edit-addon-checkbox').forEach(checkbox => {
+                checkbox.checked = addonIds.includes(checkbox.value);
+            });
+
             document.getElementById('editPackageModal').classList.remove('hidden');
         })
         .catch(error => {
