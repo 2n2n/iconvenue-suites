@@ -12,6 +12,8 @@ Currency is PHP (₱). Developed on Windows/XAMPP with MariaDB.
 
 Business process, booking rules, open initiatives and the decision log live in `docs/BUSINESS_RULES.md` (imported below). Use `/product-review <topic>` for a read-only product review that updates that document.
 
+The domain rules below describe the **current code**. `docs/BUSINESS_RULES.md` → "Approved rules (not yet built)" lists agreed changes (short stays, room stay modes, extensions, staff-only completion). When implementing those, follow the approved rules and keep existing behavior backward compatible.
+
 @docs/BUSINESS_RULES.md
 
 ## Commands
@@ -70,7 +72,7 @@ resources/views/        Blade: layouts/{public,admin,app}, public/*, admin/*
 - **Pricing** (see `BookingController@store`; `update` recalculates the base venue/package amount only, without add-ons or discount): venue full day = `price_per_day × days`; slots = sum of `price_morning/afternoon/evening` (falling back to `price_per_day`); packages (`VenuePackage`) override venue pricing, and a time-priced package's full day = sum of its three slot prices. Add-ons add `price × qty` and store `price_at_booking` on the `booking_addons` pivot. Discounts (amount or %) set `original_amount`, `discount_amount`, `discount_percentage`; `total_amount` is the post-discount figure.
 - **Pricing is duplicated** in PHP (`BookingController`, `PublicController::calculateEstimatedCost`) and in the Blade JS estimators. Any pricing change must be applied in all places and kept in sync.
 - **Add-on stock**: when `track_stock` is true, creating a booking decrements `stock_quantity` inside the `DB::transaction` and cancelling returns it; keep stock changes transactional.
-- **Status lifecycle**: bookings start `pending`; become `confirmed` when verified payments ≥ `total_amount` (`PaymentController::verifyPayment`), `completed` automatically after the booking ends, or `cancelled`. `payment_status` is `unpaid`/`partial`/`paid`. Auto-completion logic exists in **both** `AutoCompleteBookings` middleware (throttled via cache, runs on web requests) and the `bookings:complete-expired` command — change both together.
+- **Status lifecycle**: bookings start `pending`; become `confirmed` when verified payments ≥ `total_amount` (`PaymentController::verifyPayment`), `completed` automatically after the booking ends, or `cancelled`. `payment_status` is `unpaid`/`partial`/`paid`. Auto-completion logic exists in **both** `AutoCompleteBookings` middleware (throttled via cache, runs on web requests) and the `bookings:complete-expired` command — change both together. *Approved change: remove automatic completion entirely; staff check guests out (see `docs/BUSINESS_RULES.md`).*
 - **Booking reference** `IVS-YYYY-XXXX` is generated in `Booking::boot()` on create.
 - Bookings and payments use **soft deletes**.
 - Emails are sent synchronously inside `try/catch` that only logs failures — a mail error must never break a booking/payment flow.
@@ -84,7 +86,8 @@ resources/views/        Blade: layouts/{public,admin,app}, public/*, admin/*
 ## Conventions & gotchas
 
 - Style: PSR-12 / Pint defaults, 4-space indent, LF (`.editorconfig`).
-- New schema changes go in new timestamped migrations; never edit existing ones. `2026_02_11_005918_add_allow_same_day_booking_…` and `2026_06_10_093113_add_time_slot_times_…` have empty `up()`/`down()` bodies.
-- Tests are thin (`ImageUploadTest` + examples). They assume `role_id = 1` is admin — create roles in test setup if you add tests that need them. Add a feature test when changing pricing, availability or payment logic.
+- New schema changes go in new timestamped migrations; never edit existing ones. Migrations must be additive and reversible (new columns nullable, working `down()`), and must not change existing booking records — code falls back to legacy rules when new columns are empty. `2026_02_11_005918_add_allow_same_day_booking_…` and `2026_06_10_093113_add_time_slot_times_…` have empty `up()`/`down()` bodies.
+- End-to-end BDD tests (planned): Playwright + `playwright-bdd` in `e2e/`, running against a **separate test schema** on the existing MariaDB server (e.g. `venue_booking_test`, via `.env.e2e`), rebuilt with `migrate:fresh` + seeders before each run. Never point tests at the live schema. New settings tables ship with a seeder for testing.
+- PHPUnit tests are thin (`ImageUploadTest` + examples). They assume `role_id = 1` is admin — create roles in test setup if you add tests that need them. Add a feature test when changing pricing, availability or payment logic.
 - `README.md` references files that don't exist (`SETUP_INSTRUCTIONS.md`, `PROJECT_OVERVIEW.md`, `SYSTEM_FLOW.md`, `QUICK_REFERENCE.md`). `USER_GUIDE.md` is the end-user guide — update it when user-visible flows change.
 - Never commit `.env`, credentials, or DB dumps.

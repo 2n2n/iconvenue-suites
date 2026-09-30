@@ -1,7 +1,7 @@
 # Business Rules — Icon Venue & Suites Booking System
 
 Living document for the project. High-level business process and business rules only.
-Last updated: 2026-09-29
+Last updated: 2026-09-30
 
 Maintained through the `/product-review` command (see `.claude/commands/product-review.md`).
 
@@ -25,7 +25,7 @@ Users:
 3. Staff creates the booking → status **Pending**, payment **Unpaid**.
 4. Staff records payment(s): partial or full. Payments are verified by staff.
 5. When verified payments cover the total → booking becomes **Confirmed**, payment **Paid**. Partial coverage → payment **Partial**.
-6. After the stay/event ends → booking becomes **Completed** (automatically, or manually by staff).
+6. After the stay/event ends → booking becomes **Completed** (currently automatic, or manually by staff). *Approved change: staff-only completion — see "Approved rules" below.*
 7. Booking may be **Cancelled** at any time; tracked add-on stock is returned.
 
 Clients receive email on booking creation, status changes, payment status changes, and a reminder the day before.
@@ -61,13 +61,45 @@ Clients receive email on booking creation, status changes, payment status change
 - Booking reference format: IVS-YYYY-XXXX.
 - Bookings are staff-created only; the public site is informational/availability only.
 
-## Open initiative: Short-time stays (2–3 hours) with extensions
+## Initiative: Short-time stays (3-hour blocks) with extensions
 
-Client requirement: a new client offers short-time suite stays of around 2–3 hours, and guests sometimes extend.
+Client requirement: a new client offers short-time suite stays, and guests sometimes extend.
 
-Status: discovery. Business decisions needed before build — see "Open questions".
+Status: requirements agreed (2026-09-30); build planned. Backlog epics: E0 E2E foundation, E1 stay settings & stay modes, E2 time-based availability, E3 short-stay booking, E4 extensions, check-out & overstay, E5 reporting (later).
 
-Areas in the current system that assume the 22-hour / per-date suite model (where to look):
+### Approved rules (not yet built)
+
+Stay settings (property-wide, admin):
+
+- Default behavior is unchanged: every suite is a 22-hour overnight stay (2:00 PM – 12:00 PM next day) until short stays are switched on.
+- When short stays are on, admin sets: block length (default 3 hours), grace period, turnover/cleaning buffer between guests, short-stay operating hours, and default rates (short-stay block, extension block, overnight).
+
+Room stay mode (per suite, admin only):
+
+- Each suite has a stay mode: **Overnight** (default), **Short-stay**, or **Both** (short stays and overnight on the same suite and day, with the buffer between them). Example: 5 rooms — 2 Short-stay, 3 Overnight.
+- Only admin changes a room's stay mode. The change applies immediately and is blocked while the room is occupied or when future bookings conflict with the new mode (conflicting booking references are listed). Every change is logged (who, when, from → to, reason).
+- Scheduling a stay-mode change from a future date is deferred (later).
+
+Booking a stay (staff):
+
+- Each booking records its own stay type (short-stay or overnight). Changing a room's stay mode never changes existing bookings, their price or their reports.
+- Staff can switch the stay type during booking (e.g. book a Short-stay room as overnight) when the room is free for that time plus buffer. This affects that booking only; the room's configured mode stays the same.
+- Price follows the booking's stay type: the room's rate for that stay type, or the property-wide default rate if the room has none. Example — Room 1 (Short-stay): ₱300 per 3-hour block, ₱300 per extension, ₱2,500 overnight; switching a booking to overnight changes its price from ₱300 to ₱2,500.
+- New overnight bookings check out at 12:00 PM the day after the last night. Existing bookings are not changed.
+- Availability for suites is by time range (check-in to check-out plus buffer), not by whole date.
+
+Extensions, check-out and overstay (staff and admin, no approval step):
+
+- One extension = a full 3-hour block at the extension rate. An extension is blocked if the room is needed by the next guest (including buffer).
+- Extensions are added to the balance and settled at check-out; the booking stays Confirmed and payment becomes Partial until paid.
+- Early check-out: the base stay and all extensions are non-refundable. The room is available again from the actual check-out time plus buffer.
+- The app never completes bookings automatically (applies to all bookings, venues included). Staff check the guest out:
+  - balance ₱0 → **Completed**;
+  - balance due → **Checked out – balance due**, then **Completed** when the payment is recorded.
+- Stays past their check-out time that staff have not checked out are shown on the dashboard as due for check-out.
+- Overstay without an extension (past check-out + grace): flagged; staff enter the charge or waive it, with a reason (who and when are recorded).
+
+### Areas in the current system that assume the 22-hour / per-date suite model (where to look)
 
 - Suite availability check (by date, whole-day blocking) — `Venue` model, availability check.
 - Suite end date and auto-completion time (12 PM on end date) — scheduled completion command and the auto-complete middleware (two copies of the same rule).
@@ -76,9 +108,9 @@ Areas in the current system that assume the 22-hour / per-date suite model (wher
 - Fixed "2 PM / 12 PM / 22 hours" wording — suite admin pages, booking form, public suites page, reminder email, report export label.
 - Day-before reminder email — only fires for bookings on the next calendar day.
 
-Observations to review with the team (facts, no recommendation):
+### Observations to review with the team (facts, no recommendation)
 
-- Single-night suite bookings store the end date as the check-in date, while completion runs at 12 PM on the end date (before the 2 PM check-in). Look at: admin booking store/update end-date calculation vs. the completion command and middleware.
+- Single-night suite bookings store the end date as the check-in date, while completion runs at 12 PM on the end date (before the 2 PM check-in). Look at: admin booking store/update end-date calculation vs. the completion command and middleware. *Decision: fixed for new bookings only.*
 - The public calendar only lists bookings by their start date; later nights of a multi-night stay may appear free. Look at: public calendar data.
 - Editing a booking recalculates the total from the base price only (add-ons and discount not included). Look at: admin booking update.
 - The reminder email template still references a single time-slot field that was replaced by multiple slots. Look at: booking reminder email view.
@@ -86,18 +118,17 @@ Observations to review with the team (facts, no recommendation):
 
 ## Open questions (business)
 
-- Short-stay product: fixed blocks (e.g., 3 hrs) or any hour count? Minimum/maximum?
-- Pricing: flat block rate, per-hour rate, or tiered? How are extensions priced (per hour, per block, grace period)?
-- Extensions: who approves, how late can they be requested, what if the next booking conflicts?
-- Cleaning/turnover buffer between guests — how long?
-- Operating hours for short stays (24/7 or limited)?
-- Can short stays and overnight stays mix on the same suite and same day?
-- Which suites offer short stays — all, or configurable per suite?
-- Payment for extensions: settled on checkout, or paid upfront per extension?
-- Late checkout / overstay without request — charged how?
-- Is this client-specific (per property) or a product-wide option?
-- Reporting: should short stays be reported separately (occupancy, revenue per hour)?
+- Default values for the turnover buffer, grace period and short-stay operating hours.
+- Minimum/maximum number of extensions, and how late an extension can be requested.
+- Reporting: should short stays be reported separately (occupancy, revenue per block)?
 
 ## Decision log
 
 - 2026-09-29 — Short-time stay initiative opened; codebase reviewed for impact. No decisions yet.
+- 2026-09-30 — Stay settings: default 22-hour overnight; short stays opt-in, 3-hour blocks; property-wide default rates.
+- 2026-09-30 — Room stay mode per suite (Overnight / Short-stay / Both), admin only, immediate change with conflict check and change log. Scheduled (future-dated) changes deferred.
+- 2026-09-30 — Staff may switch a booking's stay type during booking; price follows the stay type; missing room rate uses the property default.
+- 2026-09-30 — Extensions: full 3-hour block at the extension rate, settled at check-out; base stay and extensions non-refundable on early check-out.
+- 2026-09-30 — Overstay: flagged; staff enter or waive the charge with a reason. Staff and admin can extend/charge without approval.
+- 2026-09-30 — No automatic completion for any booking; staff check-out; "Checked out – balance due" until paid.
+- 2026-09-30 — Overnight check-out fixed to 12 PM the day after the last night for new bookings only; existing records unchanged.
