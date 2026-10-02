@@ -1,9 +1,11 @@
 # Business Rules — Icon Venue & Suites Booking System
 
 Living document for the project. High-level business process and business rules only.
-Last updated: 2026-09-30
+Last updated: 2026-10-02
 
 Maintained through the `/product-review` command (see `.claude/commands/product-review.md`).
+
+Client requirements: [`client/TPH_Enhancement_Task_Register_2026-10-02.csv`](client/TPH_Enhancement_Task_Register_2026-10-02.csv), mapped to the internal backlog in [`client/REQUIREMENT_MAPPING.md`](client/REQUIREMENT_MAPPING.md).
 
 ## Product overview
 
@@ -65,7 +67,7 @@ Clients receive email on booking creation, status changes, payment status change
 
 Client requirement: a new client offers short-time suite stays, and guests sometimes extend.
 
-Status: requirements agreed (2026-09-30); build planned. Backlog epics: E0 E2E foundation, E1 stay settings & stay modes, E2 time-based availability, E3 short-stay booking, E4 extensions, check-out & overstay, E5 reporting (later).
+Status: requirements agreed (2026-09-30); build planned. Backlog epics: E0 E2E foundation, E1 stay settings & stay modes, E2 time-based availability, E3 short-stay booking, E4 extensions, check-out & overstay, E5 reporting & dashboard, E6 booking upgrades/downgrade guard, E7 cancellation options, E8 venue configuration, E9 security & audit, E10 release & handover.
 
 ### Approved rules (not yet built)
 
@@ -87,6 +89,8 @@ Booking a stay (staff):
 - Price follows the booking's stay type: the room's rate for that stay type, or the property-wide default rate if the room has none. Example — Room 1 (Short-stay): ₱300 per 3-hour block, ₱300 per extension, ₱2,500 overnight; switching a booking to overnight changes its price from ₱300 to ₱2,500.
 - New overnight bookings check out at 12:00 PM the day after the last night. Existing bookings are not changed.
 - Availability for suites is by time range (check-in to check-out plus buffer), not by whole date.
+- An existing short-stay booking can be upgraded to overnight (long-term); the price is recalculated and the original values and payments are kept in history.
+- An existing overnight (long-term) booking can never be converted to short-stay or a short-stay rate. New bookings may still choose either stay type.
 
 Extensions, check-out and overstay (staff and admin, no approval step):
 
@@ -116,11 +120,27 @@ Extensions, check-out and overstay (staff and admin, no approval step):
 - The reminder email template still references a single time-slot field that was replaced by multiple slots. Look at: booking reminder email view.
 - The database dump contains a "time slot times" field on bookings and a same-day-booking setting migration that has no content. Look at: the two empty migrations dated 2026-02-11 and 2026-06-10.
 
+### Also requested by the client (2026-10-02)
+
+- Admin-configurable cancellation options.
+- Configurable dashboard KPIs; revenue and payment reports that separate payment status and admin-verified received payments.
+- Configurable venue variables (pricing/payment values) and venue workflow fixes.
+- Audit trails for booking and payment changes, and user access (login) history.
+- Changed workflows validated on phone, iPad, laptop and desktop browsers.
+
+### Scope
+
+- Extensions, overstay charges, early check-out, removal of auto-completion and the staff check-out flow are **change requests** (not in the client register) and are quoted separately.
+
 ## Open questions (business)
 
 - Default values for the turnover buffer, grace period and short-stay operating hours.
 - Minimum/maximum number of extensions, and how late an extension can be requested.
-- Reporting: should short stays be reported separately (occupancy, revenue per block)?
+- Reporting: which KPIs and report figures; cash received (verified payments) vs booked revenue? Should short stays be reported separately?
+- Upgrade pricing: is the short-stay amount already charged credited toward the overnight rate?
+- Cancellation options to offer (client input).
+- Venue values that must be configurable (client input).
+- Confirm "long-term" in the client register means the overnight (22-hour, multi-night) stay.
 
 ## Decision log
 
@@ -132,3 +152,5 @@ Extensions, check-out and overstay (staff and admin, no approval step):
 - 2026-09-30 — Overstay: flagged; staff enter or waive the charge with a reason. Staff and admin can extend/charge without approval.
 - 2026-09-30 — No automatic completion for any booking; staff check-out; "Checked out – balance due" until paid.
 - 2026-09-30 — Overnight check-out fixed to 12 PM the day after the last night for new bookings only; existing records unchanged.
+- 2026-10-02 — Client register received and mapped. Existing long-term bookings can never be downgraded to short-stay; new bookings may use either stay type.
+- 2026-10-02 — Extensions, overstay, early check-out and staff check-out are change requests, quoted separately. Reporting and dashboard raised to high priority.
