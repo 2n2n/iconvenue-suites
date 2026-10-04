@@ -89,7 +89,7 @@ Booking a stay (staff):
 - Price follows the booking's stay type: the room's rate for that stay type, or the property-wide default rate if the room has none. Example — Room 1 (Short-stay): ₱300 per 3-hour block, ₱300 per extension, ₱2,500 overnight; switching a booking to overnight changes its price from ₱300 to ₱2,500.
 - New overnight bookings check out at 12:00 PM the day after the last night. Existing bookings are not changed.
 - Availability for suites is by time range (check-in to check-out plus buffer), not by whole date.
-- An existing short-stay booking can be upgraded to overnight (long-term); the price is recalculated and the original values and payments are kept in history.
+- An existing short-stay booking can be upgraded to overnight (long-term). Everything already charged for the short stay is credited toward the overnight rate (e.g. ₱300 paid → ₱2,500 overnight → ₱2,200 balance). The original values and payments are kept in history.
 - An existing overnight (long-term) booking can never be converted to short-stay or a short-stay rate. New bookings may still choose either stay type.
 
 Extensions, check-out and overstay (staff and admin, no approval step):
@@ -136,10 +136,12 @@ Extensions, check-out and overstay (staff and admin, no approval step):
 
 - Default values for the turnover buffer, grace period and short-stay operating hours.
 - Minimum/maximum number of extensions, and how late an extension can be requested.
+
+Awaiting client input (skipped for now; dependent tasks are blocked):
+
 - Reporting: which KPIs and report figures; cash received (verified payments) vs booked revenue? Should short stays be reported separately?
-- Upgrade pricing: is the short-stay amount already charged credited toward the overnight rate?
-- Cancellation options to offer (client input).
-- Venue values that must be configurable (client input).
+- Cancellation options to offer.
+- Venue values that must be configurable, and examples of inconsistent booking states.
 - Confirm "long-term" in the client register means the overnight (22-hour, multi-night) stay.
 
 ## Decision log
@@ -154,3 +156,6 @@ Extensions, check-out and overstay (staff and admin, no approval step):
 - 2026-09-30 — Overnight check-out fixed to 12 PM the day after the last night for new bookings only; existing records unchanged.
 - 2026-10-02 — Client register received and mapped. Existing long-term bookings can never be downgraded to short-stay; new bookings may use either stay type.
 - 2026-10-02 — Extensions, overstay, early check-out and staff check-out are change requests, quoted separately. Reporting and dashboard raised to high priority.
+- 2026-10-02 — Upgrade short-stay → overnight: everything already charged for the short stay is credited toward the overnight rate.
+- 2026-10-02 — Client inputs (KPIs/report basis, cancellation options, venue variables, terminology) deferred until provided; dependent tasks blocked.
+- 2026-10-02 — Automated end-to-end tests run only on dev and staging, never on the client's production server.

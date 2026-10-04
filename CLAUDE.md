@@ -87,7 +87,7 @@ resources/views/        Blade: layouts/{public,admin,app}, public/*, admin/*
 
 - Style: PSR-12 / Pint defaults, 4-space indent, LF (`.editorconfig`).
 - New schema changes go in new timestamped migrations; never edit existing ones. Migrations must be additive and reversible (new columns nullable, working `down()`), and must not change existing booking records — code falls back to legacy rules when new columns are empty. `2026_02_11_005918_add_allow_same_day_booking_…` and `2026_06_10_093113_add_time_slot_times_…` have empty `up()`/`down()` bodies.
-- End-to-end BDD tests (planned): Playwright + `playwright-bdd` in `e2e/`, running against a **separate test schema** on the existing MariaDB server (e.g. `venue_booking_test`, via `.env.e2e`), rebuilt with `migrate:fresh` + seeders before each run. Never point tests at the live schema. New settings tables ship with a seeder for testing.
+- End-to-end BDD tests (planned): Playwright + `playwright-bdd` in `e2e/`, running against a **separate test schema** (e.g. `venue_booking_test`, via `.env.e2e`) on the **dev and staging servers only**, rebuilt with `migrate:fresh` + seeders before each run. Never run tests against the client's production server or a live schema. New settings tables ship with a seeder for testing.
 - PHPUnit tests are thin (`ImageUploadTest` + examples). They assume `role_id = 1` is admin — create roles in test setup if you add tests that need them. Add a feature test when changing pricing, availability or payment logic.
 - `README.md` references files that don't exist (`SETUP_INSTRUCTIONS.md`, `PROJECT_OVERVIEW.md`, `SYSTEM_FLOW.md`, `QUICK_REFERENCE.md`). `USER_GUIDE.md` is the end-user guide — update it when user-visible flows change.
 - Never commit `.env`, credentials, or DB dumps.
