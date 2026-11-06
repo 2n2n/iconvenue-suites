@@ -115,7 +115,7 @@
     <div class="email-container">
         <div class="header">
             <div class="logo-container" style="text-align: center; margin-bottom: 20px;">
-                <img src="{{ asset('images/icon-logo.png') }}" alt="Icon Venue & Suites" style="max-width: 200px; height: auto; margin-bottom: 10px;">
+                <img src="{{ isset($message) ? $message->embed(public_path('images/icon-logo.png')) : asset('images/icon-logo.png') }}" alt="Icon Venue & Suites" style="max-width: 200px; height: auto; margin-bottom: 10px;">
             </div>
             <h1>Your Event is Tomorrow!</h1>
             <div class="reminder-badge">
@@ -308,7 +308,7 @@
 
         <div class="footer">
             <div style="text-align: center; margin-bottom: 15px;">
-                <img src="{{ asset('images/icon-logo.png') }}" alt="Icon Venue & Suites" style="max-width: 120px; height: auto; opacity: 0.7;">
+                <img src="{{ isset($message) ? $message->embed(public_path('images/icon-logo.png')) : asset('images/icon-logo.png') }}" alt="Icon Venue & Suites" style="max-width: 120px; height: auto; opacity: 0.7;">
             </div>
             <p>See you tomorrow!</p>
             <p>&copy; {{ date('Y') }} Icon Venue & Suites. All rights reserved.</p>

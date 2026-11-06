@@ -1,16 +1,16 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\BookingController;
+use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\Admin\VenueController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PublicController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\VenueController;
-use App\Http\Controllers\Admin\BookingController;
-use App\Http\Controllers\Admin\PaymentController;
-use App\Http\Controllers\Admin\StaffController;
-use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\Admin\ClientController;
+use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::middleware(['public'])->group(function () {
@@ -28,13 +28,13 @@ Route::middleware(['public'])->group(function () {
 // Auth Routes
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 });
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Admin & Staff Routes
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -54,7 +54,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Browse Venues & Suites (Staff & Admin)
     Route::get('venues/browse/all', [VenueController::class, 'browseVenues'])->name('venues.browse');
     Route::get('suites/browse/all', [VenueController::class, 'browseSuites'])->name('suites.browse');
-    
+
     // Toggle Availability (Staff & Admin)
     Route::patch('venues/{venue}/toggle-availability', [VenueController::class, 'toggleVenueAvailability'])->name('venues.toggle-availability');
     Route::patch('venues/{venue}/packages/{package}/toggle-availability', [VenueController::class, 'togglePackageAvailability'])->name('venues.packages.toggle-availability');
@@ -81,7 +81,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('venues/{venue}/edit', [VenueController::class, 'edit'])->name('venues.edit');
         Route::put('venues/{venue}', [VenueController::class, 'update'])->name('venues.update');
         Route::delete('venues/{venue}', [VenueController::class, 'destroy'])->name('venues.destroy');
-        
+
         // Suites Management
         Route::get('suites', [VenueController::class, 'indexSuites'])->name('suites.index');
         Route::get('suites/create', [VenueController::class, 'createSuite'])->name('suites.create');
@@ -89,18 +89,18 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('suites/{venue}/edit', [VenueController::class, 'editSuite'])->name('suites.edit');
         Route::put('suites/{venue}', [VenueController::class, 'updateSuite'])->name('suites.update');
         Route::delete('suites/{venue}', [VenueController::class, 'destroySuite'])->name('suites.destroy');
-        
+
         Route::resource('staff', StaffController::class);
         Route::patch('staff/{staff}/toggle', [StaffController::class, 'toggleActive'])->name('staff.toggle');
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
-        
+
         // Carousel Management
         Route::resource('carousel', \App\Http\Controllers\Admin\CarouselController::class);
         Route::patch('carousel/{carousel}/toggle', [\App\Http\Controllers\Admin\CarouselController::class, 'toggleActive'])->name('carousel.toggle');
-        
+
         // Venue Packages Management
         Route::get('venues/{venue}/packages', [\App\Http\Controllers\Admin\VenueController::class, 'packages'])->name('venues.packages');
         Route::get('venues/{venue}/packages/{package}/data', [\App\Http\Controllers\Admin\VenueController::class, 'getPackageData'])->name('venues.packages.data');
@@ -108,11 +108,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::put('venues/{venue}/packages/{package}', [\App\Http\Controllers\Admin\VenueController::class, 'updatePackage'])->name('venues.packages.update');
         Route::delete('venues/{venue}/packages/{package}', [\App\Http\Controllers\Admin\VenueController::class, 'destroyPackage'])->name('venues.packages.destroy');
         Route::patch('venues/{venue}/packages/{package}/toggle', [\App\Http\Controllers\Admin\VenueController::class, 'togglePackage'])->name('venues.packages.toggle');
-        
+
         // Remove venue/suite image
         Route::post('venues/{venue}/remove-image', [\App\Http\Controllers\Admin\VenueController::class, 'removeImage'])->name('venues.removeImage');
         Route::post('suites/{venue}/remove-image', [\App\Http\Controllers\Admin\VenueController::class, 'removeImage'])->name('suites.removeImage');
-        
+
         // Add-ons Management
         Route::resource('addons', \App\Http\Controllers\Admin\VenueAddonController::class);
         Route::patch('addons/{addon}/toggle', [\App\Http\Controllers\Admin\VenueAddonController::class, 'toggleActive'])->name('addons.toggle');

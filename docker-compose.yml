@@ -166,7 +166,8 @@ services:
       APP_URL: http://dusk-app:8000
       DB_DATABASE: iconvenue_testing
       SESSION_DRIVER: file
-      CACHE_STORE: array
+      # File, not array: the login rate limiter must keep its count across requests.
+      CACHE_STORE: file
       QUEUE_CONNECTION: sync
       DUSK_DRIVER_URL: http://selenium:4444/wd/hub
       RUN_MIGRATIONS: "false"

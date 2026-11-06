@@ -38,4 +38,15 @@ class LoginPage extends Page
             ->type('@password', $password)
             ->click('@submit');
     }
+
+    /**
+     * Submit the form and wait for the server's response page, so the next
+     * assertion reads the new page (e.g. after a failed or throttled sign-in).
+     */
+    public function submitSignIn(Browser $browser, string $email, string $password): void
+    {
+        $browser->type('@email', $email)
+            ->type('@password', $password)
+            ->clickAndWaitForReload('@submit');
+    }
 }

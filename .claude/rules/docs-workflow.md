@@ -2,6 +2,7 @@
 
 `docs/` is the record of everything we discussed and agreed. An approved plan becomes a decision entry **before the first line of code**.
 
+0. **Research (optional).** When a requirement depends on outside facts (vendor docs, pricing, limits, framework behaviour), delegate to the **`researcher`** agent and show the user its brief. **On approval**, save it as `docs/research/YYYY-MM-DD-<slug>.md`, add it to `docs/research/README.md`, and link it from the decision entry's Context.
 1. **Plan.** Every plan includes a **BDD scenarios** section listing the scenario names (`<Actor> <verb>s <object> to <objective>`) the work will ship with, or an explicit exemption (refactor / infra / config + reason).
 2. **On approval** (ExitPlanMode accepted), first actions:
    - Create `docs/decisions/YYYY-MM-DD-<slug>.md` from the template in `docs/README.md`. Capture the discussion, not just the outcome: every option weighed, what the user chose, what was rejected and why.
