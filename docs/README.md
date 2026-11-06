@@ -3,11 +3,13 @@
 The written record of what we planned, discussed and agreed. Every approved plan gets a decision entry **before** code is written (see `.claude/rules/docs-workflow.md`).
 
 ## Index
-- [Architecture](architecture.md) — MVC + modular services, legacy policy
+- [Business rules](BUSINESS_RULES.md): business process, booking rules, approved initiatives, business decision log. Maintained with `/product-review`.
+- [Architecture](architecture.md): MVC plus modular services, and the legacy policy
 - [BDD testing](testing/bdd.md) — Gherkin + Dusk conventions, how to run
 - `modules/<module>.md` — living docs per module (create when a module first changes)
 
 ### Decisions (newest first)
+- [2026-11-06: Reconcile with the remote CLAUDE.md (Dusk over Playwright, services for new code)](decisions/2026-11-06-reconcile-remote-claude-md.md)
 - [2026-11-06 — AI rules, BDD QA agent, docs workflow, `/run-dev`](decisions/2026-11-06-ai-rules-bdd-agent-docs-workflow.md)
 
 ## Decision entry template
