@@ -1,0 +1,29 @@
+# Files never uploaded to Cloud Build by `gcloud builds submit` (deploy/cloudrun-deploy.sh).
+# Without this file gcloud would fall back to .gitignore, which still uploads the SQL dump and docs.
+.gcloudignore
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+node_modules
+vendor
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/logs
+storage/.seeded
+storage/app/public/*
+storage/app/private/*
+public/storage
+public/build
+public/hot
+tests
+docs
+.claude
+deploy
+icon (3).sql
+*.sql
+*.sql.gz
+docker-compose*.yml
+setup.bat

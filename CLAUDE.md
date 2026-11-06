@@ -35,6 +35,7 @@ The domain rules below describe the **current code**. `docs/BUSINESS_RULES.md` â
 | BDD / Dusk | `docker compose exec dusk-app php artisan dusk [--filter=â€¦]` |
 | Format | `docker compose exec app vendor/bin/pint --dirty` |
 | Re-seed dev DB | `docker compose exec app php artisan db:seed` (the entrypoint seeds only once, gated by `storage/.seeded`) |
+| Production (Cloud Run + MariaDB VM, `us-central1`) | `deploy/cloudrun-deploy.sh` from your machine. Runbook: `docs/deployment.md`. **Never** run `db:seed` or Dusk there |
 
 Useful artisan commands: `schedule:work`, `bookings:complete-expired`, `bookings:send-reminders`, `bookings:generate-references`, `images:clean --dry-run`.
 
@@ -121,5 +122,5 @@ resources/views/        Blade: layouts/{public,admin,app}, public/*, admin/*
 
 ## Where things are
 
-- Docs: `docs/README.md` (index and decision template), `docs/BUSINESS_RULES.md`, `docs/architecture.md`, `docs/testing/bdd.md`, `docs/decisions/`.
-- Claude Code: the `bdd-qa-tester` agent, the `/run-dev` skill and the `/product-review` command. Hooks live in `.claude/settings.json`: a docs reminder after plan approval, and a BDD gate on Stop.
+- Docs: `docs/README.md` (index and decision template), `docs/BUSINESS_RULES.md`, `docs/architecture.md`, `docs/testing/bdd.md`, `docs/decisions/`, `docs/research/` (approved research briefs).
+- Claude Code: the `bdd-qa-tester` agent, the read-only `researcher` agent (sourced briefs for requirements), the `/run-dev` skill and the `/product-review` command. Hooks live in `.claude/settings.json`: a docs reminder after plan approval, and a BDD gate on Stop.

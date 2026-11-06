@@ -1,0 +1,11 @@
+# Cloud Build: build the production image and push it to Artifact Registry.
+# Used by deploy/cloudrun-deploy.sh:
+#   gcloud builds submit --config deploy/cloudbuild.yaml --substitutions _IMAGE=<registry>/<repo>/app:<tag> .
+# The build context is the local working tree (filtered by .gcloudignore, then .dockerignore).
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-f", "docker/php/Dockerfile.prod", "-t", "${_IMAGE}", "."]
+images:
+  - "${_IMAGE}"
+options:
+  logging: CLOUD_LOGGING_ONLY

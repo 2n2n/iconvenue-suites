@@ -1,7 +1,7 @@
 # Business Rules — Icon Venue & Suites Booking System
 
 Living document for the project. High-level business process and business rules only.
-Last updated: 2026-09-30
+Last updated: 2026-11-06
 
 Maintained through the `/product-review` command (see `.claude/commands/product-review.md`).
 
@@ -20,7 +20,7 @@ Users:
 
 ## Core business process
 
-1. Client browses the website and checks availability for a date.
+1. Client asks the business about availability for a date. *(Since 2026-11-06 the website is reachable only from registered staff devices on the business's Tailscale network, so clients no longer browse it themselves; staff check availability for them.)*
 2. Client contacts the business (phone, email, social, or Google Form).
 3. Staff creates the booking → status **Pending**, payment **Unpaid**.
 4. Staff records payment(s): partial or full. Payments are verified by staff.
@@ -59,7 +59,7 @@ Clients receive email on booking creation, status changes, payment status change
 - Suites are single-occupancy per date — a suite cannot hold more than one booking on the same date.
 - Venue slots are fixed times, not custom hours.
 - Booking reference format: IVS-YYYY-XXXX.
-- Bookings are staff-created only; the public site is informational/availability only.
+- Bookings are staff-created only. The website (including the availability and estimate pages) is internal: only registered staff devices can open it (since 2026-11-06).
 
 ## Initiative: Short-time stays (3-hour blocks) with extensions
 
@@ -132,3 +132,4 @@ Extensions, check-out and overstay (staff and admin, no approval step):
 - 2026-09-30 — Overstay: flagged; staff enter or waive the charge with a reason. Staff and admin can extend/charge without approval.
 - 2026-09-30 — No automatic completion for any booking; staff check-out; "Checked out – balance due" until paid.
 - 2026-09-30 — Overnight check-out fixed to 12 PM the day after the last night for new bookings only; existing records unchanged.
+- 2026-11-06 — Whole website restricted to registered devices (Tailscale tailnet); clients no longer browse availability online and contact staff instead. See `docs/decisions/2026-11-06-tailnet-only-access.md`.

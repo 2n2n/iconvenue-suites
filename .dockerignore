@@ -7,6 +7,24 @@ storage/framework/views
 storage/logs
 storage/.seeded
 .env
-.env.backup
+.env.*
+!.env.example
 public/build
 public/hot
+
+# Keep local uploads, tests, docs and tooling out of the production image
+# (docker/php/Dockerfile.prod copies the build context). Local uploads would
+# otherwise seed the prod storage volume on first start.
+public/storage
+storage/app/public/*
+!storage/app/public/.gitignore
+storage/app/private/*
+!storage/app/private/.gitignore
+tests
+docs
+.claude
+deploy
+icon (3).sql
+*.sql
+docker-compose*.yml
+setup.bat
