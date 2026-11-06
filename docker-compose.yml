@@ -1,0 +1,150 @@
+x-app-env: &app-env
+  APP_ENV: local
+  APP_DEBUG: "true"
+  APP_URL: http://localhost:8000
+  DB_CONNECTION: mysql
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_DATABASE: iconvenue
+  DB_USERNAME: iconvenue
+  DB_PASSWORD: secret
+  SESSION_DRIVER: database
+  CACHE_STORE: database
+  QUEUE_CONNECTION: database
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  MAIL_MAILER: smtp
+  MAIL_HOST: mailpit
+  MAIL_PORT: 1025
+  MAIL_FROM_ADDRESS: hello@iconvenue.test
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: iconvenue-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      <<: *app-env
+      RUN_MIGRATIONS: "true"
+    volumes:
+      - .:/var/www/html
+      - vendor:/var/www/html/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    networks:
+      - iconvenue
+
+  queue:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: iconvenue-queue
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--tries=3", "--backoff=3", "-v"]
+    environment:
+      <<: *app-env
+      RUN_MIGRATIONS: "false"
+    volumes:
+      - .:/var/www/html
+      - vendor:/var/www/html/vendor
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - iconvenue
+
+  vite:
+    image: node:20-alpine
+    container_name: iconvenue-vite
+    working_dir: /var/www/html
+    command: sh -c "[ -f node_modules/.package-lock.json ] || npm install; npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_APP_NAME: "Icon Venue & Suites"
+    volumes:
+      - .:/var/www/html
+      - node_modules:/var/www/html/node_modules
+    networks:
+      - iconvenue
+
+  mysql:
+    image: mariadb:10.11
+    container_name: iconvenue-mysql
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: rootsecret
+      MARIADB_DATABASE: iconvenue
+      MARIADB_USER: iconvenue
+      MARIADB_PASSWORD: secret
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MARIADB_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    networks:
+      - iconvenue
+
+  redis:
+    image: redis:7-alpine
+    container_name: iconvenue-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - iconvenue
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: iconvenue-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025" # web UI
+      - "1025:1025" # smtp
+    networks:
+      - iconvenue
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: iconvenue-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: rootsecret
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    networks:
+      - iconvenue
+    profiles:
+      - tools
+
+networks:
+  iconvenue:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+  vendor:
+  node_modules:
