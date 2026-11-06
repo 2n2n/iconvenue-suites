@@ -92,6 +92,7 @@ services:
       - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MARIADB_ROOT_PASSWORD\" --silent"]
       interval: 10s
@@ -138,6 +139,49 @@ services:
       - iconvenue
     profiles:
       - tools
+
+  # --- E2E BDD testing (Dusk) — `docker compose --profile testing up -d` ---
+  # Dusk truncates the database it runs against. dusk-app is a separate server
+  # pinned to iconvenue_testing so the dev database is never touched (container
+  # env vars override .env.dusk.local, so Dusk must not run inside `app`).
+  selenium:
+    image: selenium/standalone-chromium:latest
+    container_name: iconvenue-selenium
+    shm_size: 2gb
+    ports:
+      - "7900:7900" # noVNC — watch the browser at http://localhost:7900 (password: secret)
+    networks:
+      - iconvenue
+    profiles:
+      - testing
+
+  dusk-app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: iconvenue-dusk-app
+    environment:
+      <<: *app-env
+      APP_ENV: testing
+      APP_URL: http://dusk-app:8000
+      DB_DATABASE: iconvenue_testing
+      SESSION_DRIVER: file
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      DUSK_DRIVER_URL: http://selenium:4444/wd/hub
+      RUN_MIGRATIONS: "false"
+    volumes:
+      - .:/var/www/html
+      - vendor:/var/www/html/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+      selenium:
+        condition: service_started
+    networks:
+      - iconvenue
+    profiles:
+      - testing
 
 networks:
   iconvenue:

@@ -23,7 +23,7 @@ class ImageServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Register global helper functions only if they don't exist
-        if (!function_exists('image_url')) {
+        if (!function_exists(__NAMESPACE__.'\\image_url')) {
             /**
              * Get image URL with fallback
              */
@@ -33,7 +33,7 @@ class ImageServiceProvider extends ServiceProvider
             }
         }
 
-        if (!function_exists('image_urls')) {
+        if (!function_exists(__NAMESPACE__.'\\image_urls')) {
             /**
              * Get multiple image URLs
              */
@@ -43,7 +43,7 @@ class ImageServiceProvider extends ServiceProvider
             }
         }
 
-        if (!function_exists('image_exists')) {
+        if (!function_exists(__NAMESPACE__.'\\image_exists')) {
             /**
              * Check if image exists
              */

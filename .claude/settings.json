@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.claude/skills/run-dev/scripts/run-dev.sh*)",
+      "Bash(docker info*)",
+      "Bash(docker inspect*)",
+      "Bash(docker compose exec dusk-app php artisan dusk*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/docs-after-plan.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/require-bdd-test.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

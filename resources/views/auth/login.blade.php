@@ -43,7 +43,7 @@
 
                 <!-- Error messages -->
                 @if($errors->any())
-                <div class="mb-6 rounded-lg px-4 py-3 border text-sm" style="background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.3); color: #fca5a5;">
+                <div dusk="login-errors" class="mb-6 rounded-lg px-4 py-3 border text-sm" style="background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.3); color: #fca5a5;">
                     <div class="flex items-center gap-2 mb-1">
                         <i class="fas fa-exclamation-circle"></i>
                         <span class="font-semibold">Access Denied</span>
@@ -64,7 +64,7 @@
                 @endif
 
                 <!-- Form -->
-                <form action="{{ route('login') }}" method="POST" class="space-y-5">
+                <form dusk="login-form" action="{{ route('login') }}" method="POST" class="space-y-5">
                     @csrf
 
                     <!-- Email -->
@@ -73,7 +73,7 @@
                             <i class="fas fa-user mr-1"></i> Email Address
                         </label>
                         <div class="relative">
-                            <input type="email" name="email" value="{{ old('email') }}" required autofocus
+                            <input dusk="login-email" type="email" name="email" value="{{ old('email') }}" required autofocus
                                 placeholder="Enter your email"
                                 class="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all duration-200">
                         </div>
@@ -85,7 +85,7 @@
                             <i class="fas fa-lock mr-1"></i> Password
                         </label>
                         <div class="relative">
-                            <input type="password" name="password" id="passwordInput" required
+                            <input dusk="login-password" type="password" name="password" id="passwordInput" required
                                 placeholder="Enter your password"
                                 class="w-full px-4 py-3 pr-12 rounded-lg text-sm outline-none transition-all duration-200">
                             <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 -translate-y-1/2 transition-colors" style="color: #8b6914;" onmouseover="this.style.color='#c9a84c'" onmouseout="this.style.color='#8b6914'">
@@ -103,7 +103,7 @@
                     </div>
 
                     <!-- Submit -->
-                    <button type="submit"
+                    <button dusk="login-submit" type="submit"
                         class="w-full py-3 rounded-lg font-bold text-sm tracking-widest uppercase transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg mt-2"
                         style="background: linear-gradient(135deg, #8b6914, #c9a84c, #8b6914); color: #1a0e05;"
                         onmouseover="this.style.background='linear-gradient(135deg, #c9a84c, #f0d080, #c9a84c)'"
