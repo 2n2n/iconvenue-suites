@@ -68,10 +68,13 @@
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Status *</label>
-                <select name="status" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
-                    <option value="confirmed" {{ $booking->status == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                    <option value="cancelled" {{ $booking->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                    <option value="completed" {{ $booking->status == 'completed' ? 'selected' : '' }}>Completed</option>
+                @php $currentStatus = old('status', $booking->status); @endphp
+                <select name="status" required dusk="booking-status" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                    {{-- Pending must be listed (and pre-selected) or the browser submits "confirmed" for pending bookings --}}
+                    <option value="pending" {{ $currentStatus == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="confirmed" {{ $currentStatus == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                    <option value="cancelled" {{ $currentStatus == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    <option value="completed" {{ $currentStatus == 'completed' ? 'selected' : '' }}>Completed</option>
                 </select>
             </div>
 
@@ -465,7 +468,7 @@
 
         <div class="mt-6">
             <label class="block text-gray-700 font-semibold mb-2">Notes</label>
-            <textarea name="notes" rows="4" 
+            <textarea name="notes" rows="4" dusk="booking-notes-input"
                 class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">{{ old('notes', $booking->notes) }}</textarea>
         </div>
 

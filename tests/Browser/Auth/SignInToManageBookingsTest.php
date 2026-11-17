@@ -32,10 +32,12 @@ class SignInToManageBookingsTest extends DuskTestCase
     public function test_guest_submits_wrong_credentials_to_see_an_error(): void
     {
         $this->browse(function (Browser $browser) {
+            // Wait for the server's response page; the path stays /login, so waiting on location can't tell.
             $browser->visit(new LoginPage)
-                ->signIn('nobody@iconvenue.com', 'wrong-password');
+                ->submitSignIn('nobody@iconvenue.com', 'wrong-password');
 
             $browser->on(new LoginPage)
+                ->waitFor('@errors')
                 ->assertSeeIn('@errors', 'The provided credentials do not match our records.');
         });
     }

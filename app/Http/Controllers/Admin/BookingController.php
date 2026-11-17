@@ -389,7 +389,7 @@ class BookingController extends Controller
             'time_slot_type' => 'nullable|in:full_day,multiple',
             'time_slots' => 'nullable|array',
             'time_slots.*' => 'in:morning,afternoon,evening',
-            'status' => 'required|in:confirmed,cancelled,completed',
+            'status' => 'required|in:pending,confirmed,cancelled,completed',
             'notes' => 'nullable|string',
             // Active platforms, or the booking's current one even if since deactivated
             'booking_platform_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('booking_platforms', 'id')

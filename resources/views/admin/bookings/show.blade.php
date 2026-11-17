@@ -18,7 +18,7 @@
                 </div>
                 <div>
                     <p class="text-gray-600 text-sm">Status</p>
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold
+                    <span dusk="booking-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold
                         @if($booking->status == 'confirmed') bg-green-100 text-green-800
                         @elseif($booking->status == 'pending') bg-yellow-100 text-yellow-800
                         @elseif($booking->status == 'cancelled') bg-red-100 text-red-800
@@ -106,7 +106,7 @@
             @if($booking->notes)
             <div class="mt-4">
                 <p class="text-gray-600 text-sm">Notes</p>
-                <p class="text-gray-800">{{ $booking->notes }}</p>
+                <p class="text-gray-800" dusk="booking-notes">{{ $booking->notes }}</p>
             </div>
             @endif
         </div>

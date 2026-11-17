@@ -103,21 +103,24 @@ class BookWithoutClientEmailTest extends DuskTestCase
                 ->waitForPageToSettle()
                 ->assertInputValue('@client-email', 'carla@wrong.example')
                 ->assertAttributeMissing('@client-email', 'required')
+                ->assertSelected('@booking-status', 'pending')
                 ->clear('@client-email')
                 ->scrollIntoView('@booking-update')
                 ->clickAndWaitForReload('@booking-update')
                 ->waitForPageToSettle()
                 ->assertPathIs("/admin/bookings/{$carla->id}")
                 ->assertSeeIn('@no-email-badge', self::NO_EMAIL_NOTICE)
+                ->assertSeeIn('@booking-status-badge', 'Pending')
                 ->assertSee('09185556666');
         });
 
         $carla->refresh();
         $this->assertNull($carla->client_email);
         $this->assertSame('09185556666', $carla->client_phone);
+        $this->assertSame('pending', $carla->status);
     }
 
-    /** @scenario features/bookings/book-without-client-email.feature:45 */
+    /** @scenario features/bookings/book-without-client-email.feature:46 */
     public function test_staff_opens_a_client_without_an_email_to_see_their_bookings_by_phone(): void
     {
         $dino = $this->booking('Dino Walk-in', '09187778888', null, 7);
@@ -139,7 +142,7 @@ class BookWithoutClientEmailTest extends DuskTestCase
         });
     }
 
-    /** @scenario features/bookings/book-without-client-email.feature:53 */
+    /** @scenario features/bookings/book-without-client-email.feature:54 */
     public function test_admin_adds_an_email_to_a_phone_only_client_to_start_sending_notifications(): void
     {
         $dino = $this->booking('Dino Walk-in', '09187778888', null, 7);

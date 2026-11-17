@@ -41,6 +41,7 @@ Feature: Book without a client email
     And I update the booking
     Then I see "No email — the client won't receive email notifications"
     And the booking keeps the phone "09185556666"
+    And the booking is still "Pending"
 
   Scenario: Staff opens a client without an email to see their bookings by phone
     Given "Dino Walk-in" booked "Deluxe Suite" next week with phone "09187778888" and no email
