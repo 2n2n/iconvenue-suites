@@ -40,7 +40,11 @@
             <tr class="hover:bg-gray-50 transition">
                 <td class="px-6 py-4">
                     <div class="font-semibold text-gray-800">{{ $client->client_name }}</div>
+                    @if($client->hasClientEmail())
                     <div class="text-sm text-gray-500">{{ $client->client_email }}</div>
+                    @else
+                    <div class="text-sm text-gray-400 italic" dusk="client-no-email">No email</div>
+                    @endif
                 </td>
                 <td class="px-6 py-4 text-gray-600">{{ $client->client_phone }}</td>
                 <td class="px-6 py-4">
@@ -55,7 +59,7 @@
                     {{ \Carbon\Carbon::parse($client->last_booking_date)->format('M d, Y') }}
                 </td>
                 <td class="px-6 py-4">
-                    <a href="{{ route('admin.clients.show', urlencode($client->client_email)) }}"
+                    <a href="{{ route('admin.clients.show', $client->client_key) }}" dusk="client-view-bookings"
                        class="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-semibold rounded-lg hover:shadow-lg transition-all duration-200">
                         <i class="fas fa-eye mr-1"></i>View Bookings
                     </a>

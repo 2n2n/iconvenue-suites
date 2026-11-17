@@ -69,6 +69,21 @@
                     <p class="text-gray-600 text-sm">Check-in / Check-out</p>
                     <p class="font-semibold text-gray-800">2:00 PM / 12:00 PM</p>
                 </div>
+                <div>
+                    <p class="text-gray-600 text-sm">Rate</p>
+                    <p class="font-semibold text-gray-800" dusk="booking-rate">
+                        {{ $booking->rate_source_label }}
+                        @if($booking->rate_per_night !== null)
+                            — ₱{{ number_format((float) $booking->rate_per_night, 2) }} / night
+                        @endif
+                    </p>
+                </div>
+                @if($booking->platform_reference)
+                <div>
+                    <p class="text-gray-600 text-sm">Platform Reference</p>
+                    <p class="font-semibold text-gray-800" dusk="booking-platform-reference">{{ $booking->platform_reference }}</p>
+                </div>
+                @endif
                 @elseif(!empty($booking->getTimeSlots()))
                 <div>
                     <p class="text-gray-600 text-sm">Time Slots</p>
@@ -107,7 +122,13 @@
                 </div>
                 <div>
                     <p class="text-gray-600 text-sm">Email</p>
-                    <p class="font-semibold text-gray-800">{{ $booking->client_email }}</p>
+                    @if($booking->hasClientEmail())
+                    <p class="font-semibold text-gray-800" dusk="booking-client-email">{{ $booking->client_email }}</p>
+                    @else
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800" dusk="no-email-badge">
+                        <i class="fas fa-envelope-open mr-1"></i>No email — the client won't receive email notifications
+                    </span>
+                    @endif
                 </div>
                 <div>
                     <p class="text-gray-600 text-sm">Phone</p>
@@ -216,11 +237,11 @@
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between">
                             <span class="text-red-700">Original Amount:</span>
-                            <span class="font-medium text-red-800">₱{{ number_format($booking->getOriginalAmount(), 2) }}</span>
+                            <span class="font-medium text-red-800" dusk="booking-original-amount">₱{{ number_format($booking->getOriginalAmount(), 2) }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-red-700">Discount:</span>
-                            <span class="font-medium text-red-800">
+                            <span class="font-medium text-red-800" dusk="booking-discount">
                                 -₱{{ number_format($booking->getDiscountAmount(), 2) }}
                                 @if($booking->discount_percentage)
                                     ({{ number_format($booking->discount_percentage, 1) }}%)
@@ -239,7 +260,7 @@
                 
                 <div class="flex justify-between">
                     <span class="text-gray-600">Total Amount</span>
-                    <span class="font-semibold text-gray-800">₱{{ number_format($booking->total_amount, 2) }}</span>
+                    <span class="font-semibold text-gray-800" dusk="booking-total">₱{{ number_format($booking->total_amount, 2) }}</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Paid Amount</span>

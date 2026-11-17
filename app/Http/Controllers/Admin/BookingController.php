@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\BookingStatusNotification;
 use App\Models\Booking;
 use App\Models\Venue;
-use App\Mail\BookingStatusNotification;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Carbon\Carbon;
 
 class BookingController extends Controller
 {
@@ -23,28 +23,30 @@ class BookingController extends Controller
 
         if ($request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('booking_reference', 'like', "%{$search}%")
-                  ->orWhere('client_name', 'like', "%{$search}%")
-                  ->orWhere('client_email', 'like', "%{$search}%")
-                  ->orWhere('client_phone', 'like', "%{$search}%");
+                    ->orWhere('client_name', 'like', "%{$search}%")
+                    ->orWhere('client_email', 'like', "%{$search}%")
+                    ->orWhere('client_phone', 'like', "%{$search}%");
             });
         }
 
         $bookings = $query->latest()->paginate(15);
+
         return view('admin.bookings.index', compact('bookings'));
     }
 
     public function create(Request $request)
     {
-        if (!$request->filled('venue_id') || !$request->filled('booking_date')) {
+        if (! $request->filled('venue_id') || ! $request->filled('booking_date')) {
             return view('admin.bookings.calendar', [
                 'isBookingEntry' => true,
                 'highlightVenueId' => $request->get('venue_id'),
             ]);
         }
 
-        $venues = Venue::where('is_active', true)->with('activePackages')->get();
+        $venues = Venue::where('is_active', true)->with(['activePackages', 'platformRates'])->get();
+        $platforms = \App\Models\BookingPlatform::active()->ordered()->get();
         $addons = \App\Models\VenueAddon::active()->orderBy('category')->orderBy('sort_order')->get()->groupBy('category');
         $selectedVenueId = $request->get('venue_id');
 
@@ -62,7 +64,7 @@ class BookingController extends Controller
             })];
         });
 
-        return view('admin.bookings.create', compact('venues', 'addons', 'selectedVenueId', 'venuePackages'));
+        return view('admin.bookings.create', compact('venues', 'addons', 'selectedVenueId', 'venuePackages', 'platforms'));
     }
 
     public function store(Request $request)
@@ -70,7 +72,7 @@ class BookingController extends Controller
         $validated = $request->validate([
             'venue_id' => 'required|exists:venues_and_suites,id',
             'client_name' => 'required|string|max:255',
-            'client_email' => 'required|email',
+            'client_email' => 'nullable|email',
             'client_phone' => 'required|string',
             'booking_date' => 'required|date|after_or_equal:today',
             'number_of_days' => 'nullable|integer|min:1|max:365',
@@ -85,16 +87,20 @@ class BookingController extends Controller
             // Discount fields
             'discount_type' => 'nullable|in:amount,percentage',
             'discount_value' => 'nullable|numeric|min:0',
-            'discount_reason' => 'nullable|string|max:255'
+            'discount_reason' => 'nullable|string|max:255',
+            // Suite rate source: null = regular rate; only active platforms for new bookings
+            'booking_platform_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('booking_platforms', 'id')->where('is_active', true)],
+            'platform_reference' => 'nullable|string|max:100',
         ], [
-            'booking_date.after_or_equal' => 'Cannot book past dates. Please select today or a future date.'
+            'booking_platform_id.exists' => 'The selected booking platform is not available.',
+            'booking_date.after_or_equal' => 'Cannot book past dates. Please select today or a future date.',
         ]);
 
         // Additional check for past dates
         $bookingDate = \Carbon\Carbon::parse($validated['booking_date']);
-        if ($bookingDate->isPast() && !$bookingDate->isToday()) {
+        if ($bookingDate->isPast() && ! $bookingDate->isToday()) {
             return back()->withErrors([
-                'booking_date' => 'Cannot book past dates. The selected date has already passed. Please choose today or a future date.'
+                'booking_date' => 'Cannot book past dates. The selected date has already passed. Please choose today or a future date.',
             ])->withInput();
         }
 
@@ -108,9 +114,9 @@ class BookingController extends Controller
 
             // Time slot START hours — a slot cannot be booked once it has started
             $slotStartHours = [
-                'morning'   =>  8, // starts 8:00 AM
+                'morning' => 8, // starts 8:00 AM
                 'afternoon' => 13, // starts 1:00 PM
-                'evening'   => 18, // starts 6:00 PM
+                'evening' => 18, // starts 6:00 PM
             ];
 
             $isFullDay = empty($validated['time_slots']) || ($request->time_slot_type === 'full_day');
@@ -119,7 +125,7 @@ class BookingController extends Controller
                 // Full day: cannot book if the morning slot has already started
                 if ($currentHour >= 8) {
                     return back()->withErrors([
-                        'booking_date' => 'Cannot create a full-day booking for today — the morning slot has already started (8:00 AM).'
+                        'booking_date' => 'Cannot create a full-day booking for today — the morning slot has already started (8:00 AM).',
                     ])->withInput();
                 }
             } else {
@@ -131,29 +137,30 @@ class BookingController extends Controller
                     }
                 }
 
-                if (!empty($expiredSlots)) {
+                if (! empty($expiredSlots)) {
                     $slotLabels = [
-                        'Morning'   => '8:00 AM – 12:00 PM',
+                        'Morning' => '8:00 AM – 12:00 PM',
                         'Afternoon' => '1:00 PM – 5:00 PM',
-                        'Evening'   => '6:00 PM – 10:00 PM',
+                        'Evening' => '6:00 PM – 10:00 PM',
                     ];
                     $details = implode(', ', array_map(
-                        fn($s) => "{$s} ({$slotLabels[$s]})",
+                        fn ($s) => "{$s} ({$slotLabels[$s]})",
                         $expiredSlots
                     ));
+
                     return back()->withErrors([
-                        'time_slots' => "The following time slot(s) have already started or passed for today: {$details}. Please select a future time slot or choose a different date."
+                        'time_slots' => "The following time slot(s) have already started or passed for today: {$details}. Please select a future time slot or choose a different date.",
                     ])->withInput();
                 }
             }
         }
 
         // Validate time slot combination — morning+evening without afternoon is not allowed
-        if (!empty($validated['time_slots']) && count($validated['time_slots']) === 2) {
+        if (! empty($validated['time_slots']) && count($validated['time_slots']) === 2) {
             $slots = $validated['time_slots'];
             if (in_array('morning', $slots) && in_array('evening', $slots)) {
                 return back()->withErrors([
-                    'time_slots' => 'Invalid time slot combination. You can only select Morning + Afternoon or Afternoon + Evening.'
+                    'time_slots' => 'Invalid time slot combination. You can only select Morning + Afternoon or Afternoon + Evening.',
                 ])->withInput();
             }
         }
@@ -161,7 +168,7 @@ class BookingController extends Controller
         // Calculate number of days and end_date
         $days = $request->number_of_days ?? 1;
         $validated['number_of_days'] = $days;
-        
+
         // Calculate end_date based on number of days
         $bookingDate = \Carbon\Carbon::parse($validated['booking_date']);
         if ($venue->type === 'suite' && $days > 1) {
@@ -172,22 +179,41 @@ class BookingController extends Controller
             $validated['end_date'] = $validated['booking_date'];
         }
 
-        $requestedTimeSlots = ($request->time_slot_type === 'multiple' && !empty($validated['time_slots']))
+        $requestedTimeSlots = ($request->time_slot_type === 'multiple' && ! empty($validated['time_slots']))
             ? $validated['time_slots']
             : [];
 
-        if (!$venue->isAvailable($validated['booking_date'], $validated['end_date'], null, $requestedTimeSlots)) {
-            $errorMessage = !empty($requestedTimeSlots)
+        if (! $venue->isAvailable($validated['booking_date'], $validated['end_date'], null, $requestedTimeSlots)) {
+            $errorMessage = ! empty($requestedTimeSlots)
                 ? 'One or more selected time slots are already booked for this date.'
                 : 'Venue is not available for selected date range.';
+
             return back()->withErrors(['booking_date' => $errorMessage])->withInput();
         }
-        
+
+        // Rate source applies to suites only; venues always store null (regular pricing).
+        $validated['booking_platform_id'] = null;
+        $validated['rate_per_night'] = null;
+        if ($venue->type !== 'suite') {
+            $validated['platform_reference'] = null;
+        }
+
         // Calculate venue/package amount
-        if ($request->package_id) {
+        if ($venue->type === 'suite') {
+            // Suite: nightly rate from the selected rate source (platform rate, else regular) × nights
+            $quote = app(\App\Services\Venue\SuiteRateService::class)
+                ->quote($venue, isset($request->booking_platform_id) && $request->booking_platform_id !== '' ? (int) $request->booking_platform_id : null);
+            $venueAmount = $quote->total($days);
+            $validated['booking_platform_id'] = $quote->platformId();
+            $validated['rate_per_night'] = $quote->ratePerNight;
+            $validated['package_id'] = null;
+            if ($quote->platform === null) {
+                $validated['platform_reference'] = null;
+            }
+        } elseif ($request->package_id) {
             // Package booking
             $package = \App\Models\VenuePackage::findOrFail($request->package_id);
-            
+
             // Check if multiple time slots are selected
             if ($request->time_slot_type === 'multiple' && $validated['time_slots']) {
                 $venueAmount = 0;
@@ -208,21 +234,21 @@ class BookingController extends Controller
                 // Full day package booking
                 if ($package->hasTimeBasedPricing()) {
                     // Calculate full day as sum of all 3 time slots
-                    $venueAmount = ($package->getPriceForTimeSlot('morning') + 
-                                   $package->getPriceForTimeSlot('afternoon') + 
+                    $venueAmount = ($package->getPriceForTimeSlot('morning') +
+                                   $package->getPriceForTimeSlot('afternoon') +
                                    $package->getPriceForTimeSlot('evening')) * $days;
                 } else {
                     // Package without time-based pricing
                     $venueAmount = $package->price * $days;
                 }
             }
-            
+
             $validated['package_id'] = $request->package_id;
         } elseif ($request->time_slot_type === 'multiple' && $validated['time_slots']) {
             // Multiple time slots booking
             $venueAmount = 0;
             foreach ($validated['time_slots'] as $slot) {
-                $pricePerSlot = match($slot) {
+                $pricePerSlot = match ($slot) {
                     'morning' => $venue->price_morning ?? $venue->price_per_day,
                     'afternoon' => $venue->price_afternoon ?? $venue->price_per_day,
                     'evening' => $venue->price_evening ?? $venue->price_per_day,
@@ -242,27 +268,27 @@ class BookingController extends Controller
             $addons = \App\Models\VenueAddon::whereIn('id', $request->addons)->get();
             foreach ($addons as $addon) {
                 $quantity = $request->addon_quantities[$addon->id] ?? 1;
-                
+
                 // Check stock availability
                 if ($addon->track_stock && $addon->stock_quantity < $quantity) {
                     return back()->withErrors(['addons' => "Insufficient stock for {$addon->name}. Only {$addon->stock_quantity} available."])->withInput();
                 }
-                
+
                 $subtotal = $addon->price * $quantity;
                 $addonsAmount += $subtotal;
                 $selectedAddons[$addon->id] = [
                     'quantity' => $quantity,
-                    'price_at_booking' => $addon->price
+                    'price_at_booking' => $addon->price,
                 ];
             }
         }
 
         $originalAmount = $venueAmount + $addonsAmount;
-        
+
         // Apply discount if provided
         $discountAmount = 0;
         $discountPercentage = null;
-        
+
         if ($request->discount_type && $request->discount_value > 0) {
             if ($request->discount_type === 'amount') {
                 $discountAmount = min($request->discount_value, $originalAmount);
@@ -272,7 +298,7 @@ class BookingController extends Controller
                 $discountAmount = ($originalAmount * $discountPercentage) / 100;
             }
         }
-        
+
         $finalAmount = $originalAmount - $discountAmount;
 
         $validated['staff_id'] = auth()->id();
@@ -286,7 +312,7 @@ class BookingController extends Controller
         $booking = DB::transaction(function () use ($validated, $selectedAddons) {
             $booking = Booking::create($validated);
 
-            if (!empty($selectedAddons)) {
+            if (! empty($selectedAddons)) {
                 $booking->addons()->attach($selectedAddons);
 
                 foreach ($selectedAddons as $addonId => $data) {
@@ -305,9 +331,12 @@ class BookingController extends Controller
 
         // Send email notification after successful transaction
         try {
-            Mail::to($booking->client_email)->send(new BookingStatusNotification($booking));
+            // Client email is optional; skip when the booking has none.
+            if ($booking->hasClientEmail()) {
+                Mail::to($booking->client_email)->send(new BookingStatusNotification($booking));
+            }
         } catch (\Exception $e) {
-            \Log::error('Failed to send new booking email: ' . $e->getMessage());
+            \Log::error('Failed to send new booking email: '.$e->getMessage());
         }
 
         return redirect()->route('admin.bookings.show', $booking)
@@ -316,29 +345,35 @@ class BookingController extends Controller
 
     public function show(Booking $booking)
     {
-        $booking->load(['venue', 'package', 'staff', 'payments.verifiedBy']);
+        $booking->load(['venue', 'package', 'platform', 'staff', 'payments.verifiedBy']);
+
         return view('admin.bookings.show', compact('booking'));
     }
 
     public function edit(Booking $booking)
     {
-        $venues = Venue::with('activePackages')->where('is_active', true)->get();
+        $venues = Venue::with(['activePackages', 'platformRates'])->where('is_active', true)->get();
+        // Active platforms, plus the booking's own platform if it has since been deactivated
+        $platforms = \App\Models\BookingPlatform::query()
+            ->where(fn ($q) => $q->where('is_active', true)->orWhere('id', $booking->booking_platform_id))
+            ->ordered()
+            ->get();
 
         $venuePackages = $venues->mapWithKeys(function ($venue) {
             return [$venue->id => $venue->activePackages->map(function ($package) {
                 return [
-                    'id'                   => $package->id,
-                    'name'                 => $package->name,
-                    'price'                => $package->price,
-                    'price_morning'        => $package->price_morning,
-                    'price_afternoon'      => $package->price_afternoon,
-                    'price_evening'        => $package->price_evening,
+                    'id' => $package->id,
+                    'name' => $package->name,
+                    'price' => $package->price,
+                    'price_morning' => $package->price_morning,
+                    'price_afternoon' => $package->price_afternoon,
+                    'price_evening' => $package->price_evening,
                     'has_time_based_pricing' => $package->has_time_based_pricing,
                 ];
             })];
         });
 
-        return view('admin.bookings.edit', compact('booking', 'venues', 'venuePackages'));
+        return view('admin.bookings.edit', compact('booking', 'venues', 'venuePackages', 'platforms'));
     }
 
     public function update(Request $request, Booking $booking)
@@ -347,7 +382,7 @@ class BookingController extends Controller
             'venue_id' => 'required|exists:venues_and_suites,id',
             'package_id' => 'nullable|exists:venue_packages,id',
             'client_name' => 'required|string|max:255',
-            'client_email' => 'required|email',
+            'client_email' => 'nullable|email',
             'client_phone' => 'required|string',
             'booking_date' => 'required|date|after_or_equal:today',
             'number_of_days' => 'nullable|integer|min:1|max:365',
@@ -355,25 +390,30 @@ class BookingController extends Controller
             'time_slots' => 'nullable|array',
             'time_slots.*' => 'in:morning,afternoon,evening',
             'status' => 'required|in:confirmed,cancelled,completed',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            // Active platforms, or the booking's current one even if since deactivated
+            'booking_platform_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('booking_platforms', 'id')
+                ->where(fn ($q) => $q->where('is_active', true)->orWhere('id', $booking->booking_platform_id))],
+            'platform_reference' => 'nullable|string|max:100',
         ], [
-            'booking_date.after_or_equal' => 'Cannot book past dates. Please select today or a future date.'
+            'booking_platform_id.exists' => 'The selected booking platform is not available.',
+            'booking_date.after_or_equal' => 'Cannot book past dates. Please select today or a future date.',
         ]);
 
         // Additional check for past dates
         $bookingDate = \Carbon\Carbon::parse($validated['booking_date']);
-        if ($bookingDate->isPast() && !$bookingDate->isToday()) {
+        if ($bookingDate->isPast() && ! $bookingDate->isToday()) {
             return back()->withErrors([
-                'booking_date' => 'Cannot update to a past date. The selected date has already passed. Please choose today or a future date.'
+                'booking_date' => 'Cannot update to a past date. The selected date has already passed. Please choose today or a future date.',
             ])->withInput();
         }
 
         // Validate time slot combination
-        if (!empty($validated['time_slots']) && count($validated['time_slots']) === 2) {
+        if (! empty($validated['time_slots']) && count($validated['time_slots']) === 2) {
             $slots = $validated['time_slots'];
             if (in_array('morning', $slots) && in_array('evening', $slots)) {
                 return back()->withErrors([
-                    'time_slots' => 'Invalid time slot combination. You can only select Morning + Afternoon or Afternoon + Evening.'
+                    'time_slots' => 'Invalid time slot combination. You can only select Morning + Afternoon or Afternoon + Evening.',
                 ])->withInput();
             }
         }
@@ -390,29 +430,63 @@ class BookingController extends Controller
             $validated['end_date'] = $validated['booking_date'];
         }
 
-        $requestedTimeSlots = ($request->time_slot_type === 'multiple' && !empty($validated['time_slots']))
+        $requestedTimeSlots = ($request->time_slot_type === 'multiple' && ! empty($validated['time_slots']))
             ? $validated['time_slots']
             : [];
 
-        if (!$venue->isAvailable($validated['booking_date'], $validated['end_date'], $booking->id, $requestedTimeSlots)) {
-            $errorMessage = !empty($requestedTimeSlots)
+        if (! $venue->isAvailable($validated['booking_date'], $validated['end_date'], $booking->id, $requestedTimeSlots)) {
+            $errorMessage = ! empty($requestedTimeSlots)
                 ? 'One or more selected time slots are already booked for this date.'
                 : 'Venue is not available for selected date range.';
+
             return back()->withErrors(['booking_date' => $errorMessage])->withInput();
         }
 
+        // Rate source applies to suites only; venues always store null.
+        $validated['booking_platform_id'] = null;
+        $validated['rate_per_night'] = null;
+        if ($venue->type !== 'suite') {
+            $validated['platform_reference'] = null;
+        }
+
         // Recalculate amount — mirrors store() logic
-        if ($request->package_id) {
+        if ($venue->type === 'suite') {
+            $platformId = isset($request->booking_platform_id) && $request->booking_platform_id !== ''
+                ? (int) $request->booking_platform_id
+                : null;
+
+            // Keep the rate the booking was made at while the suite and rate source are unchanged;
+            // a different suite or rate source is re-quoted at today's rate.
+            $unchanged = $booking->rate_per_night !== null
+                && (int) $booking->venue_id === (int) $venue->id
+                && ($booking->booking_platform_id === null ? null : (int) $booking->booking_platform_id) === $platformId;
+
+            if ($unchanged) {
+                $ratePerNight = (float) $booking->rate_per_night;
+            } else {
+                $quote = app(\App\Services\Venue\SuiteRateService::class)->quote($venue, $platformId);
+                $ratePerNight = $quote->ratePerNight;
+                $platformId = $quote->platformId();
+            }
+
+            $venueAmount = round($ratePerNight * $days, 2);
+            $validated['booking_platform_id'] = $platformId;
+            $validated['rate_per_night'] = $ratePerNight;
+            $validated['package_id'] = null;
+            if ($platformId === null) {
+                $validated['platform_reference'] = null;
+            }
+        } elseif ($request->package_id) {
             $package = \App\Models\VenuePackage::findOrFail($request->package_id);
 
-            if ($request->time_slot_type === 'multiple' && !empty($validated['time_slots'])) {
+            if ($request->time_slot_type === 'multiple' && ! empty($validated['time_slots'])) {
                 $venueAmount = 0;
                 foreach ($validated['time_slots'] as $slot) {
                     $venueAmount += $package->hasTimeBasedPricing()
                         ? $package->getPriceForTimeSlot($slot) * $days
                         : $package->price * $days;
                 }
-            } elseif ($package->hasTimeBasedPricing() && !empty($validated['time_slots'])) {
+            } elseif ($package->hasTimeBasedPricing() && ! empty($validated['time_slots'])) {
                 $venueAmount = 0;
                 foreach ($validated['time_slots'] as $slot) {
                     $venueAmount += $package->getPriceForTimeSlot($slot) * $days;
@@ -424,14 +498,14 @@ class BookingController extends Controller
             }
 
             $validated['package_id'] = $request->package_id;
-        } elseif ($request->time_slot_type === 'multiple' && !empty($validated['time_slots'])) {
+        } elseif ($request->time_slot_type === 'multiple' && ! empty($validated['time_slots'])) {
             $venueAmount = 0;
             foreach ($validated['time_slots'] as $slot) {
-                $pricePerSlot = match($slot) {
-                    'morning'   => $venue->price_morning ?? $venue->price_per_day,
+                $pricePerSlot = match ($slot) {
+                    'morning' => $venue->price_morning ?? $venue->price_per_day,
                     'afternoon' => $venue->price_afternoon ?? $venue->price_per_day,
-                    'evening'   => $venue->price_evening ?? $venue->price_per_day,
-                    default     => $venue->price_per_day
+                    'evening' => $venue->price_evening ?? $venue->price_per_day,
+                    default => $venue->price_per_day
                 };
                 $venueAmount += $pricePerSlot * $days;
             }
@@ -467,10 +541,13 @@ class BookingController extends Controller
 
         // Send email notification
         try {
-            Mail::to($booking->client_email)->send(new BookingStatusNotification($booking, $previousStatus));
+            // Client email is optional; skip when the booking has none.
+            if ($booking->hasClientEmail()) {
+                Mail::to($booking->client_email)->send(new BookingStatusNotification($booking, $previousStatus));
+            }
         } catch (\Exception $e) {
             // Log error but don't fail the status update
-            \Log::error('Failed to send booking confirmation email: ' . $e->getMessage());
+            \Log::error('Failed to send booking confirmation email: '.$e->getMessage());
         }
 
         return redirect()->route('admin.bookings.index')
@@ -495,9 +572,12 @@ class BookingController extends Controller
         $booking->load(['venue', 'package']);
 
         try {
-            Mail::to($booking->client_email)->send(new BookingStatusNotification($booking, $previousStatus));
+            // Client email is optional; skip when the booking has none.
+            if ($booking->hasClientEmail()) {
+                Mail::to($booking->client_email)->send(new BookingStatusNotification($booking, $previousStatus));
+            }
         } catch (\Exception $e) {
-            \Log::error('Failed to send booking cancellation email: ' . $e->getMessage());
+            \Log::error('Failed to send booking cancellation email: '.$e->getMessage());
         }
 
         return redirect()->route('admin.bookings.index')
@@ -514,15 +594,19 @@ class BookingController extends Controller
 
         // Send email notification
         try {
-            Mail::to($booking->client_email)->send(new BookingStatusNotification($booking, $previousStatus));
+            // Client email is optional; skip when the booking has none.
+            if ($booking->hasClientEmail()) {
+                Mail::to($booking->client_email)->send(new BookingStatusNotification($booking, $previousStatus));
+            }
         } catch (\Exception $e) {
             // Log error but don't fail the status update
-            \Log::error('Failed to send booking completion email: ' . $e->getMessage());
+            \Log::error('Failed to send booking completion email: '.$e->getMessage());
         }
 
         return redirect()->route('admin.bookings.index')
             ->with('success', 'Booking marked as completed! Email notification sent to client.');
     }
+
     public function calendar()
     {
         return redirect()->route('admin.bookings.create');
@@ -566,7 +650,7 @@ class BookingController extends Controller
         while ($current <= $end) {
             $dateStr = $current->format('Y-m-d');
             $isToday = $current->isToday();
-            $isPast = $current->isPast() && !$isToday;
+            $isPast = $current->isPast() && ! $isToday;
             $passedSlots = $isToday ? $todayPassedSlots : [];
 
             $dayData = [

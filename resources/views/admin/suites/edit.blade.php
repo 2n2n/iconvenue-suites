@@ -38,9 +38,15 @@
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Price per Day *</label>
+                <label class="block text-gray-700 font-semibold mb-2">Regular Rate (per night) *</label>
                 <input type="number" name="price_per_day" value="{{ old('price_per_day', $venue->price_per_day) }}" required min="0" step="0.01"
                     class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                @if($venue->type === 'suite')
+                <p class="text-xs text-gray-500 mt-1">
+                    Or edit this and all platform rates (Agoda, Booking.com, …) for every room in
+                    <a href="{{ route('admin.rates.index') }}#suite-{{ $venue->id }}" class="text-purple-600 underline">Room Rates</a>.
+                </p>
+                @endif
             </div>
         </div>
 

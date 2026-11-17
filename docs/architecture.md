@@ -28,6 +28,15 @@ Route → Controller → FormRequest (validate + authorize)
 
 **Modules:** Booking, Venue (venues, suites, packages), Addon, Payment, Client, Staff, Report, Settings, Carousel, Media.
 
+**Built on the target architecture so far:**
+- `Services/Staff/AdminAccountService`.
+- `Services/Venue/SuiteRateService` with `Admin/RoomRateController` and `Requests/Venue/UpdateRoomRatesRequest`.
+- `Services/Settings/BookingPlatformService` with `Admin/BookingPlatformController` and
+  `Requests/Settings/*BookingPlatformRequest`.
+
+The legacy `BookingController` (store/update) and `ReportController` call into `SuiteRateService` through targeted
+edits. See [modules/venue.md](modules/venue.md).
+
 ## Production topology (as of 2026-11-06)
 See [deployment.md](deployment.md) and [the decision](decisions/2026-11-06-production-cloud-run.md).
 

@@ -383,7 +383,7 @@ function openModal(b) {
 
     document.getElementById('modalBody').innerHTML = `
         <div class="flex justify-between gap-4"><span class="text-gray-500 shrink-0">Location</span><span class="font-semibold text-right">${escapeHtml(b.venue_name || '—')}</span></div>
-        <div class="flex justify-between gap-4"><span class="text-gray-500 shrink-0">Email</span><span class="text-right break-all">${escapeHtml(b.client_email)}</span></div>
+        <div class="flex justify-between gap-4"><span class="text-gray-500 shrink-0">Email</span><span class="text-right break-all">${escapeHtml(b.client_email || '—')}</span></div>
         <div class="flex justify-between gap-4"><span class="text-gray-500 shrink-0">Phone</span><span class="text-right">${escapeHtml(b.client_phone)}</span></div>
         <div class="flex justify-between gap-4"><span class="text-gray-500 shrink-0">Date</span><span class="text-right">${escapeHtml(b.booking_date)}${b.number_of_days > 1 ? ' → ' + escapeHtml(b.end_date) : ''}</span></div>
         <div class="flex justify-between gap-4"><span class="text-gray-500 shrink-0">Time Slot</span><span class="text-right">${escapeHtml(b.time_slots || 'Full Day')}</span></div>
@@ -413,7 +413,7 @@ function exportCSV() {
         calendarData.venues.forEach(v => {
             const venueDay = d.venues[v.id] || { bookings: [] };
             (venueDay.bookings || []).forEach(b => {
-                rows.push([b.reference, b.client_name, b.client_email, b.client_phone, v.name, v.type,
+                rows.push([b.reference, b.client_name, b.client_email || '', b.client_phone, v.name, v.type,
                     b.booking_date, b.end_date, b.number_of_days, b.time_slots,
                     b.package || '', b.total_amount, b.status, b.payment_status]);
             });

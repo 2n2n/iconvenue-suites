@@ -22,10 +22,10 @@
     </div>
     <div>
         <h2 class="text-xl font-bold text-gray-800">{{ $client['name'] }}</h2>
-        <div class="text-sm text-gray-500 mt-1">
-            <i class="fas fa-envelope mr-1"></i>{{ $client['email'] }}
+        <div class="text-sm text-gray-500 mt-1" dusk="client-email-line">
+            <i class="fas fa-envelope mr-1"></i>{{ $client['email'] ?? 'No email' }}
         </div>
-        <div class="text-sm text-gray-500 mt-1">
+        <div class="text-sm text-gray-500 mt-1" dusk="client-phone-line">
             <i class="fas fa-phone mr-1"></i>{{ $client['phone'] }}
         </div>
     </div>
@@ -39,7 +39,7 @@
             <div class="text-sm text-gray-500">Total Spent</div>
         </div>
         @if(auth()->user()->isAdmin())
-        <button onclick="document.getElementById('editModal').classList.remove('hidden')"
+        <button onclick="document.getElementById('editModal').classList.remove('hidden')" dusk="client-edit"
                 class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg transition-all duration-200">
             <i class="fas fa-edit mr-2"></i>Edit Client
         </button>
@@ -123,7 +123,7 @@
             <button onclick="document.getElementById('editModal').classList.add('hidden')"
                     class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
         </div>
-        <form action="{{ route('admin.clients.update', urlencode($client['email'])) }}" method="POST" class="px-6 py-5 space-y-4">
+        <form action="{{ route('admin.clients.update', $client['key']) }}" method="POST" class="px-6 py-5 space-y-4">
             @csrf
             @method('PUT')
             <div>
@@ -134,10 +134,11 @@
                 @error('client_name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email Address (optional)</label>
                 <input type="email" name="client_email" value="{{ old('client_email', $client['email']) }}"
-                       required
+                       dusk="client-edit-email"
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <p class="text-xs text-gray-500 mt-1">Needed for booking confirmation, payment and reminder emails.</p>
                 @error('client_email')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
             <div>
@@ -154,7 +155,7 @@
                         class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm">
                     Cancel
                 </button>
-                <button type="submit"
+                <button type="submit" dusk="client-edit-save"
                         class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition text-sm font-semibold">
                     Save Changes
                 </button>

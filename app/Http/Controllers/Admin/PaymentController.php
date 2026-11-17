@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Payment;
-use App\Models\Booking;
 use App\Mail\PaymentStatusNotification;
+use App\Models\Booking;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -16,6 +16,7 @@ class PaymentController extends Controller
         $payments = Payment::with(['booking.venue', 'verifiedBy'])
             ->latest()
             ->paginate(15);
+
         return view('admin.payments.index', compact('payments'));
     }
 
@@ -38,7 +39,7 @@ class PaymentController extends Controller
             'payment_method' => 'nullable|string|max:255',
             'reference_number' => 'nullable|string|max:255',
             'proof_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'notes' => 'nullable|string|max:1000'
+            'notes' => 'nullable|string|max:1000',
         ], [
             'amount.min' => 'Payment amount must be greater than zero.',
             'proof_image.image' => 'Payment proof must be a valid image file.',
@@ -58,27 +59,31 @@ class PaymentController extends Controller
         if ($validated['payment_type'] === 'full') {
             if (round((float) $validated['amount'], 2) !== $balance) {
                 return back()->withInput()
-                    ->withErrors(['amount' => 'Full payment must equal the remaining balance of ₱' . number_format($balance, 2) . '.']);
+                    ->withErrors(['amount' => 'Full payment must equal the remaining balance of ₱'.number_format($balance, 2).'.']);
             }
         } elseif (round((float) $validated['amount'], 2) > $balance) {
             return back()->withInput()
-                ->withErrors(['amount' => 'Payment amount cannot exceed the remaining balance of ₱' . number_format($balance, 2) . '.']);
+                ->withErrors(['amount' => 'Payment amount cannot exceed the remaining balance of ₱'.number_format($balance, 2).'.']);
         }
 
         try {
             if ($request->hasFile('proof_image')) {
                 $file = $request->file('proof_image');
-                
+
                 // Generate unique filename
-                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $filename = time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
                 $storedPath = $file->storeAs('payments', $filename, 'public');
                 $validated['proof_image'] = $storedPath;
 
                 // Copy to public/storage for web access (Windows XAMPP symlink workaround)
-                $sourcePath = storage_path('app/public/' . $storedPath);
-                $publicPath = public_path('storage/' . $storedPath);
-                if (!is_dir(dirname($publicPath))) mkdir(dirname($publicPath), 0755, true);
-                if (file_exists($sourcePath) && !file_exists($publicPath)) copy($sourcePath, $publicPath);
+                $sourcePath = storage_path('app/public/'.$storedPath);
+                $publicPath = public_path('storage/'.$storedPath);
+                if (! is_dir(dirname($publicPath))) {
+                    mkdir(dirname($publicPath), 0755, true);
+                }
+                if (file_exists($sourcePath) && ! file_exists($publicPath)) {
+                    copy($sourcePath, $publicPath);
+                }
             }
 
             unset($validated['payment_type']);
@@ -95,10 +100,10 @@ class PaymentController extends Controller
 
             return redirect()->route('admin.bookings.show', $validated['booking_id'])
                 ->with('success', 'Payment record created successfully!');
-                
+
         } catch (\Exception $e) {
-            \Log::error('Payment creation failed: ' . $e->getMessage());
-            
+            \Log::error('Payment creation failed: '.$e->getMessage());
+
             return back()->withInput()
                 ->withErrors(['error' => 'Failed to create payment record. Please try again.']);
         }
@@ -116,7 +121,7 @@ class PaymentController extends Controller
         $payment->update([
             'status' => 'verified',
             'verified_by' => auth()->id(),
-            'verified_at' => now()
+            'verified_at' => now(),
         ]);
 
         $booking = $payment->booking;
@@ -134,9 +139,12 @@ class PaymentController extends Controller
         $payment->load(['booking.venue', 'booking.package']);
 
         try {
-            Mail::to($payment->booking->client_email)->send(new PaymentStatusNotification($payment, 'verified'));
+            // Client email is optional; skip when the booking has none.
+            if ($payment->booking->hasClientEmail()) {
+                Mail::to($payment->booking->client_email)->send(new PaymentStatusNotification($payment, 'verified'));
+            }
         } catch (\Exception $e) {
-            \Log::error('Failed to send payment verified email: ' . $e->getMessage());
+            \Log::error('Failed to send payment verified email: '.$e->getMessage());
         }
 
         if ($fastTransaction && $totalPaid >= $booking->total_amount) {
@@ -151,14 +159,14 @@ class PaymentController extends Controller
     public function reject(Request $request, Payment $payment)
     {
         $request->validate([
-            'notes' => 'required|string'
+            'notes' => 'required|string',
         ]);
 
         $payment->update([
             'status' => 'rejected',
             'verified_by' => auth()->id(),
             'verified_at' => now(),
-            'notes' => $request->notes
+            'notes' => $request->notes,
         ]);
 
         // Load relationships for email
@@ -166,9 +174,12 @@ class PaymentController extends Controller
 
         // Send email notification to client
         try {
-            Mail::to($payment->booking->client_email)->send(new PaymentStatusNotification($payment, 'rejected'));
+            // Client email is optional; skip when the booking has none.
+            if ($payment->booking->hasClientEmail()) {
+                Mail::to($payment->booking->client_email)->send(new PaymentStatusNotification($payment, 'rejected'));
+            }
         } catch (\Exception $e) {
-            \Log::error('Failed to send payment rejected email: ' . $e->getMessage());
+            \Log::error('Failed to send payment rejected email: '.$e->getMessage());
         }
 
         return back()->with('success', 'Payment rejected! Email notification sent to client.');

@@ -116,7 +116,8 @@ Shows a quick overview of bookings, revenue, and recent activity.
    - Filter by Venues, Suites, or All
    - For **venues**: choose Full Day or specific time slots (and optional package)
    - For **suites**: standard stay is check-in 2:00 PM, check-out 12:00 PM next day; set number of days if needed
-2. **Enter client details** — name, email, phone
+   - For **suites**, choose the **Rate**: *Regular rate* (walk-in / direct) or the booking platform the guest booked through (e.g. Agoda, Booking.com). Each option shows its nightly price for the selected room. The price uses that platform's rate for the room; if the room has no rate for that platform, the regular rate is used and the form says so. Optionally enter the **Platform reference** (the platform's booking ID). Discounts still apply on top.
+2. **Enter client details** — name and phone (required), email (optional — without it the client gets no confirmation, payment or reminder emails)
 3. **Set booking date** and duration
 4. **Add add-ons** if applicable
 5. **Apply discount** (optional) — amount or percentage with reason
@@ -186,7 +187,7 @@ Partial verified payments set payment status to **Partial** until the balance is
 
 **Path:** Clients
 
-- View all clients grouped by email
+- View all clients grouped by email (clients without an email are grouped by phone and marked "No email")
 - See their booking history and contact details
 - Update client information
 
@@ -204,8 +205,33 @@ Admins have access to everything staff has, plus:
 
 - Create and edit venues and suites (name, capacity, description, images, amenities)
 - Set **Full Day Price** and **time-slot prices** separately
+- Set each suite's **Regular rate (per night)**
+- See **Room Rates** below to change suite prices.
 - Manage **event packages** per venue (pricing, inclusions, time-based package rates)
 - Toggle availability
+
+### Room Rates
+
+**Path:** Room Rates (admin only)
+
+One screen with every suite (rows) and its **Regular** rate plus one column per booking platform (Agoda, Booking.com, …). Use it whenever management changes prices, for example for a promo.
+
+1. Type the new prices straight into the cells. Changed cells turn yellow; hover to see the old price.
+2. To give several rooms the same change, tick the rooms, pick the column and an action (**Set to ₱**, raise/lower by **₱** or **%**) and press **Apply**. This only fills the cells.
+3. Press **Save changes** to save everything at once, or **Discard** to undo your edits. Nothing is saved until you press Save.
+
+- An **empty platform cell** means that room uses its regular rate on that platform (the regular price is shown in grey). Clear a cell to go back to the regular rate.
+- The regular rate can't be empty.
+- New prices apply to **new bookings only**; existing bookings keep the rate they were booked at.
+- **Manage platforms** (top right) opens the platform list.
+
+### Booking platforms
+
+**Path:** Room Rates → Manage platforms (admin only)
+
+- Agoda and Booking.com are set up by default
+- Add new platforms (e.g. Expedia), rename them, or change their display order
+- **Deactivate** a platform to stop staff from selecting it for new bookings; a platform already used by bookings cannot be deleted
 
 ### Add-ons
 
@@ -232,7 +258,8 @@ Admins have access to everything staff has, plus:
 
 - Filter by **date range**
 - View booking statistics, revenue, top venues/suites, and payment records
-- **Export to Excel** (CSV) — includes booking details, amounts, payment methods, and **reference numbers**
+- **By Booking Platform**: bookings, booked total and verified revenue per rate source (Regular, Agoda, Booking.com, …)
+- **Export to Excel** (CSV) — includes booking details, amounts, **rate / platform**, rate per night, platform reference, payment methods, and **reference numbers**
 
 ---
 
@@ -288,7 +315,7 @@ Clients may receive emails for:
 - **Payment verified** or **payment rejected**
 - **Booking reminder** (about 24 hours before the event)
 
-Ensure client email addresses are correct when creating bookings.
+Ensure client email addresses are correct when creating bookings. If a booking has no email, no client emails are sent and the booking details show a **No email** badge.
 
 ---
 

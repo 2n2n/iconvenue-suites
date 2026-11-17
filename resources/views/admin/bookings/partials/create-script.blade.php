@@ -183,16 +183,20 @@
                 } else {
                     // Use venue pricing
                     if (venueType === 'suite') {
-                        const basePrice = parseFloat(selectedOption.getAttribute('data-price'));
+                        // Base rate follows the selected rate source (Regular / booking platform)
+                        const nightly = window.getSuiteNightlyRate
+                            ? window.getSuiteNightlyRate(selectedOption)
+                            : { rate: parseFloat(selectedOption.getAttribute('data-price')), label: 'Regular rate' };
+                        const basePrice = nightly.rate;
                         const numberOfDaysInput = document.getElementById('number_of_days');
                         const numberOfDays = numberOfDaysInput ? parseInt(numberOfDaysInput.value) || 1 : 1;
-                        
+
                         price = basePrice * numberOfDays;
-                        
+
                         if (numberOfDays > 1) {
-                            description = `Suite rental (${numberOfDays} days × ₱${basePrice.toLocaleString('en-PH', {minimumFractionDigits: 2})})`;
+                            description = `Suite rental — ${nightly.label} (${numberOfDays} days × ₱${basePrice.toLocaleString('en-PH', {minimumFractionDigits: 2})})`;
                         } else {
-                            description = 'Suite rental (22 hours)';
+                            description = `Suite rental — ${nightly.label} (22 hours)`;
                         }
                     } else {
                         // Check if multiple time slots are selected
@@ -696,6 +700,15 @@
             const numberOfDaysInput = document.getElementById('number_of_days');
             if (numberOfDaysInput) {
                 numberOfDaysInput.addEventListener('input', function() {
+                    updatePriceDisplay();
+                    updateTotalWithAddons();
+                });
+            }
+
+            // Re-price when the suite rate source changes
+            const rateSourceSelect = document.getElementById('booking_platform_id');
+            if (rateSourceSelect) {
+                rateSourceSelect.addEventListener('change', function() {
                     updatePriceDisplay();
                     updateTotalWithAddons();
                 });

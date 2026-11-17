@@ -90,6 +90,19 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::put('suites/{venue}', [VenueController::class, 'updateSuite'])->name('suites.update');
         Route::delete('suites/{venue}', [VenueController::class, 'destroySuite'])->name('suites.destroy');
 
+        // Room Rates: every suite's regular + per-platform rates on one grid (admin only)
+        Route::get('rates', [\App\Http\Controllers\Admin\RoomRateController::class, 'index'])->name('rates.index');
+        Route::put('rates', [\App\Http\Controllers\Admin\RoomRateController::class, 'update'])->name('rates.update');
+        // Old per-suite Rates page → grid at that room
+        Route::get('suites/{venue}/rates', [\App\Http\Controllers\Admin\RoomRateController::class, 'legacySuiteRates'])->name('suites.rates.edit');
+
+        // Booking platforms (Agoda, Booking.com, …) — admin only
+        Route::get('booking-platforms', [\App\Http\Controllers\Admin\BookingPlatformController::class, 'index'])->name('booking-platforms.index');
+        Route::post('booking-platforms', [\App\Http\Controllers\Admin\BookingPlatformController::class, 'store'])->name('booking-platforms.store');
+        Route::put('booking-platforms/{platform}', [\App\Http\Controllers\Admin\BookingPlatformController::class, 'update'])->name('booking-platforms.update');
+        Route::patch('booking-platforms/{platform}/toggle', [\App\Http\Controllers\Admin\BookingPlatformController::class, 'toggle'])->name('booking-platforms.toggle');
+        Route::delete('booking-platforms/{platform}', [\App\Http\Controllers\Admin\BookingPlatformController::class, 'destroy'])->name('booking-platforms.destroy');
+
         Route::resource('staff', StaffController::class);
         Route::patch('staff/{staff}/toggle', [StaffController::class, 'toggleActive'])->name('staff.toggle');
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');

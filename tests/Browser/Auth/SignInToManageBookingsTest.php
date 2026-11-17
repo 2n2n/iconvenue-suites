@@ -21,6 +21,7 @@ class SignInToManageBookingsTest extends DuskTestCase
                 ->signIn('admin@iconvenue.com', 'admin123');
 
             $browser->waitForLocation('/admin/dashboard')
+                ->waitForPageToSettle()
                 ->assertSee('Dashboard')
                 ->assertSee('Total Bookings')
                 ->assertSee('Total Venues');

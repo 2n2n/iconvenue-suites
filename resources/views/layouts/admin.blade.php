@@ -59,6 +59,10 @@
                 <i class="fas fa-bed mr-3 w-5"></i> 
                 <span class="font-medium">Suites</span>
             </a>
+            <a href="{{ route('admin.rates.index') }}" dusk="nav-room-rates" class="flex items-center px-4 py-3 mb-2 rounded-lg hover:bg-gray-700 transition-all duration-200 {{ request()->routeIs('admin.rates.*') || request()->routeIs('admin.booking-platforms.*') ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg' : '' }}">
+                <i class="fas fa-tags mr-3 w-5"></i>
+                <span class="font-medium">Room Rates</span>
+            </a>
             <a href="{{ route('admin.staff.index') }}" class="flex items-center px-4 py-3 mb-2 rounded-lg hover:bg-gray-700 transition-all duration-200 {{ request()->routeIs('admin.staff.*') ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg' : '' }}">
                 <i class="fas fa-users mr-3 w-5"></i> 
                 <span class="font-medium">Staff</span>

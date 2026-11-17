@@ -147,6 +147,41 @@
         </div>
     </div>
 
+    {{-- Bookings & revenue by rate source (Regular / booking platform) --}}
+    <div class="bg-white rounded-lg shadow p-6" dusk="report-by-platform">
+        <h3 class="text-xl font-bold mb-1 text-gray-800 flex items-center">
+            <i class="fas fa-globe mr-2 text-purple-600"></i>
+            By Booking Platform
+        </h3>
+        <p class="text-xs text-gray-500 mb-4">Bookings created in this period (excluding cancelled) and verified payments received, by rate source.</p>
+        @if($revenueStats['by_platform']->isNotEmpty())
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs text-gray-500 uppercase border-b">
+                        <th class="py-2 pr-4">Platform</th>
+                        <th class="py-2 pr-4 text-right">Bookings</th>
+                        <th class="py-2 pr-4 text-right">Booked Total</th>
+                        <th class="py-2 text-right">Verified Revenue</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y">
+                    @foreach($revenueStats['by_platform'] as $row)
+                    <tr dusk="report-platform-row-{{ \Illuminate\Support\Str::slug($row->label) }}">
+                        <td class="py-2 pr-4 font-semibold text-gray-800">{{ $row->label }}</td>
+                        <td class="py-2 pr-4 text-right tabular-nums">{{ number_format($row->count) }}</td>
+                        <td class="py-2 pr-4 text-right tabular-nums whitespace-nowrap">₱{{ number_format($row->booked_total, 2) }}</td>
+                        <td class="py-2 text-right tabular-nums whitespace-nowrap font-bold text-green-700">₱{{ number_format($row->revenue, 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @else
+        <p class="text-gray-500 text-sm">No bookings in this period.</p>
+        @endif
+    </div>
+
     <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center">
             <i class="fas fa-building mr-2 text-purple-600"></i>
