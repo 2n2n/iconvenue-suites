@@ -4,7 +4,9 @@
       "Bash(.claude/skills/run-dev/scripts/run-dev.sh*)",
       "Bash(docker info*)",
       "Bash(docker inspect*)",
-      "Bash(docker compose exec dusk-app php artisan dusk*)"
+      "Bash(docker compose exec dusk-app php artisan dusk*)",
+      "Bash(.claude/skills/rollback-prod/scripts/rollback-prod.sh)",
+      "Bash(.claude/skills/rollback-prod/scripts/rollback-prod.sh --test-restore restore_check)"
     ]
   },
   "hooks": {

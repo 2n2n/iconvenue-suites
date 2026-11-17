@@ -8,7 +8,7 @@ Icon Venue & Suites booking system: a server-rendered **Laravel 12 / PHP 8.2+** 
 
 Currency is PHP (₱). Local development runs in **Docker** (`/run-dev`). The app was originally built on Windows/XAMPP with MariaDB, so keep the XAMPP-compatible behaviour (see Images / uploads).
 
-Rules in `.claude/rules/` load automatically: senior Laravel standards, strict MVC, modular services, the docs workflow, the Definition of Done and test naming.
+Rules in `.claude/rules/` load automatically: senior Laravel standards, strict MVC, modular services, the docs workflow, the Definition of Done, test naming and **production mode** (backup before every deploy, `/rollback-prod`).
 
 ## Non-negotiables
 
@@ -35,7 +35,7 @@ The domain rules below describe the **current code**. `docs/BUSINESS_RULES.md` �
 | BDD / Dusk | `docker compose exec dusk-app php artisan dusk [--filter=…]` |
 | Format | `docker compose exec app vendor/bin/pint --dirty` |
 | Re-seed dev DB | `docker compose exec app php artisan db:seed` (the entrypoint seeds only once, gated by `storage/.seeded`) |
-| Production (Cloud Run + MariaDB VM, `us-central1`) | `deploy/cloudrun-deploy.sh` from your machine. Runbook: `docs/deployment.md`. **Never** run `db:seed` or Dusk there |
+| Production (Cloud Run + MariaDB VM, `us-central1`) | `deploy/cloudrun-deploy.sh` from your machine, **only after the user confirms**. It backs up the DB first (and aborts if that fails), migrates, deploys and writes a deploy record. Roll back with `/rollback-prod`. Backups are kept 30 days. Rules: `.claude/rules/production.md`. Runbook: `docs/deployment.md`. **Never** run `db:seed` or Dusk there |
 
 Useful artisan commands: `schedule:work`, `bookings:complete-expired`, `bookings:send-reminders`, `bookings:generate-references`, `images:clean --dry-run`.
 
@@ -123,4 +123,4 @@ resources/views/        Blade: layouts/{public,admin,app}, public/*, admin/*
 ## Where things are
 
 - Docs: `docs/README.md` (index and decision template), `docs/BUSINESS_RULES.md`, `docs/architecture.md`, `docs/testing/bdd.md`, `docs/decisions/`, `docs/research/` (approved research briefs).
-- Claude Code: the `bdd-qa-tester` agent, the read-only `researcher` agent (sourced briefs for requirements), the `/run-dev` skill and the `/product-review` command. Hooks live in `.claude/settings.json`: a docs reminder after plan approval, and a BDD gate on Stop.
+- Claude Code: the `bdd-qa-tester` agent, the read-only `researcher` agent (sourced briefs for requirements), the `/run-dev` and `/rollback-prod` skills and the `/product-review` command. Hooks live in `.claude/settings.json`: a docs reminder after plan approval, and a BDD gate on Stop.
