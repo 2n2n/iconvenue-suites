@@ -158,8 +158,10 @@ final class OptionalClientEmailTest extends TestCase
             ->assertOk()
             ->assertSee($booking->booking_reference);
 
-        // Adding an email later moves the client to the email key
-        $this->actingAs($this->staff)->put(route('admin.clients.update', 'tel-09171234567'), [
+        // Adding an email later (admin only) moves the client to the email key
+        $adminRole = Role::where('name', 'admin')->firstOrFail();
+        $admin = User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => 'secret-password', 'role_id' => $adminRole->id, 'is_active' => true]);
+        $this->actingAs($admin)->put(route('admin.clients.update', 'tel-09171234567'), [
             'client_name' => 'Walk-in Guest', 'client_email' => 'walkin@example.com', 'client_phone' => '09171234567',
         ])->assertRedirect(route('admin.clients.show', 'walkin@example.com'));
 

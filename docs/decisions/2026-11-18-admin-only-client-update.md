@@ -43,4 +43,6 @@ PHPUnit additionally covers: Staff is refused when updating a client directly (4
 None.
 
 ## Deviations from plan
-None. Dusk attributes were added to the client page (`client-name`, `client-edit-modal`, `client-edit-name`, `client-edit-phone`) for the tests.
+- Dusk attributes were added to the client page (`client-name`, `client-edit-modal`, `client-edit-name`,
+  `client-edit-phone`) for the tests.
+- `OptionalClientEmailTest` updated a phone-only client as staff, relying on the bug; that step now runs as admin.
