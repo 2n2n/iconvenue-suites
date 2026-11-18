@@ -21,7 +21,7 @@
         {{ strtoupper(substr($client['name'], 0, 1)) }}
     </div>
     <div>
-        <h2 class="text-xl font-bold text-gray-800">{{ $client['name'] }}</h2>
+        <h2 class="text-xl font-bold text-gray-800" dusk="client-name">{{ $client['name'] }}</h2>
         <div class="text-sm text-gray-500 mt-1" dusk="client-email-line">
             <i class="fas fa-envelope mr-1"></i>{{ $client['email'] ?? 'No email' }}
         </div>
@@ -116,7 +116,7 @@
 
 {{-- Edit Client Modal (Admin only) --}}
 @if(auth()->user()->isAdmin())
-<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div id="editModal" dusk="client-edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <h3 class="text-lg font-semibold text-gray-800">Edit Client Info</h3>
@@ -129,7 +129,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                 <input type="text" name="client_name" value="{{ old('client_name', $client['name']) }}"
-                       required
+                       dusk="client-edit-name" required
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
                 @error('client_name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
@@ -144,7 +144,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input type="text" name="client_phone" value="{{ old('client_phone', $client['phone']) }}"
-                       required
+                       dusk="client-edit-phone" required
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
                 @error('client_phone')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>

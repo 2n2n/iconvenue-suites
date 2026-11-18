@@ -12,6 +12,7 @@ The written record of what we planned, discussed and agreed. Every approved plan
 - `modules/<module>.md` — living docs per module (create when a module first changes)
 
 ### Decisions (newest first)
+- [2026-11-18 — Only admins can update client details](decisions/2026-11-18-admin-only-client-update.md)
 - [2026-11-18 — Editing a pending booking keeps it Pending](decisions/2026-11-18-edit-keeps-pending-status.md)
 - [2026-11-17 — Client email optional on bookings](decisions/2026-11-17-optional-client-email.md)
 - [2026-11-17 — Pre-deploy database backup and `/rollback-prod`](decisions/2026-11-17-predeploy-backup-and-rollback.md)

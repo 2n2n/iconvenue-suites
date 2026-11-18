@@ -62,7 +62,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Clients (Staff & Admin)
     Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
     Route::get('clients/{email}', [ClientController::class, 'show'])->name('clients.show');
-    Route::put('clients/{email}', [ClientController::class, 'update'])->name('clients.update');
 
     // Payments (Staff & Admin)
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -74,6 +73,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     // Admin Only Routes
     Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->group(function () {
+        // Client details (admin only; staff can list and view clients)
+        Route::put('clients/{email}', [ClientController::class, 'update'])->name('clients.update');
+
         // Venues Management
         Route::get('venues', [VenueController::class, 'indexVenues'])->name('venues.index');
         Route::get('venues/create', [VenueController::class, 'createVenue'])->name('venues.create');

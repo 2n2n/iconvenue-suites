@@ -69,4 +69,4 @@ None.
   for emails containing `+`. PHPUnit now covers this case.
 - **Notes for follow-up, both older than this change and not fixed here:**
   - editing a pending booking submits status "confirmed" (fixed in [2026-11-18](2026-11-18-edit-keeps-pending-status.md));
-  - staff can call the client update route directly, although only admins see the button.
+  - staff can call the client update route directly, although only admins see the button (fixed in [2026-11-18](2026-11-18-admin-only-client-update.md)).
