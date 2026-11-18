@@ -111,14 +111,6 @@
                         <i class="fas fa-sign-in-alt mr-2"></i>Sign In
                     </button>
                 </form>
-
-                <!-- Back link -->
-                <div class="mt-6 text-center">
-                    <a href="{{ route('home') }}" class="text-xs tracking-wider transition-colors" style="color: #5a4010;"
-                        onmouseover="this.style.color='#c9a84c'" onmouseout="this.style.color='#5a4010'">
-                        <i class="fas fa-arrow-left mr-1"></i> Back to Website
-                    </a>
-                </div>
             </div>
 
             <!-- Bottom accent bar -->

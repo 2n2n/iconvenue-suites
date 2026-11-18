@@ -14,13 +14,13 @@ A booking system for a property that rents two kinds of spaces:
 
 Users:
 
-- **Client (public)** — browses venues and suites, checks availability and estimated price, then contacts the business. Clients do not create bookings themselves.
+- **Client** — contacts the business (phone, email, social) to ask about availability and price. Clients have no access to the app and do not create bookings themselves. *(The public website, where clients used to browse venues and suites, is turned off since 2026-11-18.)*
 - **Staff** — creates and manages bookings, records payments, manages clients, toggles availability.
 - **Admin** — everything staff can do, plus venues/suites, packages, add-ons, staff accounts, settings, reports, homepage carousel.
 
 ## Core business process
 
-1. Client asks the business about availability for a date. *(Since 2026-11-06 the website is reachable only from registered staff devices on the business's Tailscale network, so clients no longer browse it themselves; staff check availability for them.)*
+1. Client asks the business about availability for a date. *(Since 2026-11-06 the website is reachable only from registered staff devices on the business's Tailscale network, so clients no longer browse it themselves; staff check availability for them. Since 2026-11-18 the public pages are turned off entirely and the home page is the staff sign-in.)*
 2. Client contacts the business (phone, email, social, or Google Form).
 3. Staff creates the booking → status **Pending**, payment **Unpaid**.
 4. Staff records payment(s): partial or full. Payments are verified by staff.
@@ -60,7 +60,7 @@ Clients receive email on booking creation, status changes, payment status change
 - Suites are single-occupancy per date — a suite cannot hold more than one booking on the same date.
 - Venue slots are fixed times, not custom hours.
 - Booking reference format: IVS-YYYY-XXXX.
-- Bookings are staff-created only. The website (including the availability and estimate pages) is internal: only registered staff devices can open it (since 2026-11-06).
+- Bookings are staff-created only. The website (including the availability and estimate pages) is internal: only registered staff devices can open it (since 2026-11-06). There are no public pages: opening the site shows the staff sign-in, and guests have no availability, estimate or booking-request page (since 2026-11-18).
 
 ## Initiative: Short-time stays (3-hour blocks) with extensions
 
@@ -140,3 +140,4 @@ Extensions, check-out and overstay (staff and admin, no approval step):
 - 2026-11-18 — Bug fix: editing a booking keeps its current status (Pending is now selectable on edit); a pending booking is no longer confirmed by an edit. See `docs/decisions/2026-11-18-edit-keeps-pending-status.md`.
 - 2026-11-18 — Only admins can update client details (name, email, phone); staff can view clients. Security fix: the update route was reachable by staff. See `docs/decisions/2026-11-18-admin-only-client-update.md`.
 - 2026-11-18 — Login lockout counts failed sign-ins only (5 per minute per email); successful sign-ins never lock an account out. See `docs/decisions/2026-11-18-login-throttle-counts-failures-only.md`.
+- 2026-11-18 — Public website turned off for now: the home page is the staff sign-in, and guests have no way to browse, check availability or send a booking request. See `docs/decisions/2026-11-18-disable-public-website.md`.

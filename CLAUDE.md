@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository.
 
 ## Project
 
-Icon Venue & Suites booking system: a server-rendered **Laravel 12 / PHP 8.2+** app. Public visitors browse venues and suites, check availability and get cost estimates. **Staff and admins** create bookings for clients, record and verify payments, and manage inventory from `/admin`. There is no client-facing checkout, and clients never log in.
+Icon Venue & Suites booking system: a server-rendered **Laravel 12 / PHP 8.2+** app. Opening the app shows the staff sign-in; there is no public website (turned off 2026-11-18, `docs/decisions/2026-11-18-disable-public-website.md`). **Staff and admins** create bookings for clients, record and verify payments, and manage inventory from `/admin`. There is no client-facing checkout, and clients never log in.
 
 Currency is PHP (₱). Local development runs in **Docker** (`/run-dev`). The app was originally built on Windows/XAMPP with MariaDB, so keep the XAMPP-compatible behaviour (see Images / uploads).
 
@@ -55,7 +55,7 @@ routes/web.php          all routes (public, auth, /admin with admin-only subgrou
 routes/console.php      scheduler: send-reminders daily 09:00, complete-expired every minute
 bootstrap/app.php       middleware aliases + AutoCompleteBookings appended to `web` group
 app/Http/Controllers/
-  PublicController      public pages + JSON endpoints (calendar-data, addons-data, check-availability)
+  PublicController      former public pages + JSON endpoints; kept but NOT routed (public site is off)
   AuthController        login/logout
   Admin/*               BookingController (largest, ~740 lines), VenueController (venues, suites,
                         packages), PaymentController, VenueAddonController, Report/Staff/Settings/...
@@ -67,7 +67,7 @@ resources/views/        Blade: layouts/{public,admin,app}, public/*, admin/*
 ```
 
 - **Legacy controllers are fat.** There's no service layer yet, and validation is inline `$request->validate()`. Leave existing actions as they are unless a refactor is approved. **New** actions, even inside a legacy controller, use FormRequests and `app/Services/{Module}/` (see `.claude/rules/mvc-architecture.md` and `service-modules.md`).
-- **Roles**: `users.role_id` → `roles.name` (`admin` | `staff`). Use `$user->isAdmin()` / `isStaff()`. Every `/admin` route requires `auth`. Admin-only routes sit inside the `AdminMiddleware` group in `web.php`. The `public` middleware alias *redirects logged-in staff to the dashboard* and sets no-cache headers, so logged-in users can't view the public site.
+- **Roles**: `users.role_id` → `roles.name` (`admin` | `staff`). Use `$user->isAdmin()` / `isStaff()`. Every `/admin` route requires `auth`. Admin-only routes sit inside the `AdminMiddleware` group in `web.php`. The `public` middleware alias (redirects logged-in staff to the dashboard, no-cache headers) is currently unused, because no public routes exist: `/` redirects to `/login`.
 - **Frontend**: Blade + Tailwind **via CDN** (`cdn.tailwindcss.com`), Font Awesome 6, Alpine.js and jQuery, all from CDNs in the layouts. The Vite/Tailwind v4 setup in `vite.config.js`/`resources/css` is scaffolding and **no** layout loads it (only the unused default `welcome.blade.php` calls `@vite`). Don't add `@vite`, and don't expect `npm run build` to change pages. Page JS lives inline in Blade partials (e.g. `admin/bookings/partials/create-script.blade.php`, `public/partials/venue-details-script.blade.php`).
 
 ## Domain rules (read before touching bookings/pricing)

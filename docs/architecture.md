@@ -53,6 +53,9 @@ iconvenue-db: nightly mariadb-dump → gs://icon-events-513902-db-backups (via P
 ```
 - **The whole app is reachable only from registered tailnet devices**
   ([decision](decisions/2026-11-06-tailnet-only-access.md), [guide](tailscale-guide.md)).
+  - There are no public routes: `/` redirects to `/login` (route name `home`), and signed-in users go on to the
+    dashboard. `PublicController`, `views/public/*` and the `public` middleware alias are kept but unrouted
+    ([decision](decisions/2026-11-18-disable-public-website.md)).
   - `APP_PUBLIC_HOST` makes the prod entrypoint set `X-Forwarded-Host` in Apache, so Laravel builds every URL and
     redirect on the ts.net host.
   - `POST /login` is rate-limited (`throttle:login`, 5 failed attempts/min per email + IP, successful sign-ins don't count; behind the gateway this is effectively per

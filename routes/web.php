@@ -9,21 +9,11 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\VenueController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\PublicController;
 use Illuminate\Support\Facades\Route;
 
-// Public Routes
-Route::middleware(['public'])->group(function () {
-    Route::get('/', [PublicController::class, 'index'])->name('home');
-    Route::get('/venues', [PublicController::class, 'venues'])->name('venues');
-    Route::get('/suites', [PublicController::class, 'suites'])->name('suites');
-    Route::get('/venue/{id}', [PublicController::class, 'venueDetails'])->name('venue.details');
-    Route::get('/venue/{id}/addons', [PublicController::class, 'venueAddons'])->name('venue.addons');
-    Route::get('/venue/{id}/addons-data', [PublicController::class, 'venueAddonsData'])->name('venue.addons.data');
-    Route::get('/venue/{id}/calendar-data', [PublicController::class, 'venueCalendarData'])->name('venue.calendar.data');
-    Route::post('/check-availability', [PublicController::class, 'checkAvailability'])->name('check.availability');
-    Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
-});
+// No public website (turned off 2026-11-18, docs/decisions/2026-11-18-disable-public-website.md).
+// The home page is the staff sign-in; the guest middleware on /login sends signed-in users to the dashboard.
+Route::redirect('/', '/login')->name('home');
 
 // Auth Routes
 Route::middleware(['guest'])->group(function () {

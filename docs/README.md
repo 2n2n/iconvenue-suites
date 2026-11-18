@@ -12,6 +12,7 @@ The written record of what we planned, discussed and agreed. Every approved plan
 - `modules/<module>.md` — living docs per module (create when a module first changes)
 
 ### Decisions (newest first)
+- [2026-11-18 — Public website turned off; the home page is the staff sign-in](decisions/2026-11-18-disable-public-website.md)
 - [2026-11-18 — The login lockout counts failed sign-ins only](decisions/2026-11-18-login-throttle-counts-failures-only.md)
 - [2026-11-18 — Only admins can update client details](decisions/2026-11-18-admin-only-client-update.md)
 - [2026-11-18 — Editing a pending booking keeps it Pending](decisions/2026-11-18-edit-keeps-pending-status.md)
