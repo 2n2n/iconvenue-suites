@@ -70,7 +70,8 @@
                                 data-price-morning="{{ $venue->price_morning ?? 0 }}"
                                 data-price-afternoon="{{ $venue->price_afternoon ?? 0 }}"
                                 data-price-evening="{{ $venue->price_evening ?? 0 }}"
-                                data-type="{{ $venue->type }}" 
+                                data-platform-rates='@json($venue->platformRates->pluck('price_per_night', 'booking_platform_id')->map(fn ($p) => (float) $p))'
+                                data-type="{{ $venue->type }}"
                                 class="venue-option venue-type-{{ $venue->type }}"
                                 {{ isset($selectedVenueId) && $selectedVenueId == $venue->id ? 'selected' : '' }}>
                             {{ $venue->name }}
@@ -217,19 +218,21 @@
             <div class="grid md:grid-cols-3 gap-6">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label>
-                    <input type="text" name="client_name" value="{{ old('client_name') }}" required 
+                    <input type="text" name="client_name" value="{{ old('client_name') }}" required dusk="client-name" 
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-colors">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Client Email *</label>
-                    <input type="email" name="client_email" value="{{ old('client_email') }}" required 
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Client Email (optional)</label>
+                    <input type="email" name="client_email" value="{{ old('client_email') }}" dusk="client-email" 
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-colors">
+                    <p class="text-xs text-gray-500 mt-1">Optional. Needed for the booking confirmation, payment and reminder emails.</p>
+                    @error('client_email')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Client Phone *</label>
-                    <input type="text" name="client_phone" value="{{ old('client_phone') }}" required 
+                    <input type="text" name="client_phone" value="{{ old('client_phone') }}" required dusk="client-phone" 
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-colors">
                 </div>
             </div>
@@ -254,12 +257,17 @@
                 <!-- Number of Days (for Suites only) -->
                 <div id="numberOfDaysField" style="display: none;">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Number of Days *</label>
-                    <input type="number" name="number_of_days" id="number_of_days" value="{{ old('number_of_days', 1) }}" min="1" max="365"
+                    <input type="number" name="number_of_days" id="number_of_days" dusk="number-of-days" value="{{ old('number_of_days', 1) }}" min="1" max="365"
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors">
                     <p class="text-xs text-gray-500 mt-1">
                         <i class="fas fa-info-circle mr-1"></i>
                         Price will be calculated per day
                     </p>
+
+                    @include('admin.bookings.partials.rate-source-fields', [
+                        'selectedPlatformId' => old('booking_platform_id'),
+                        'platformReference' => old('platform_reference'),
+                    ])
                 </div>
 
                 <div id="notesField">
@@ -444,14 +452,14 @@
                             </div>
                             <span class="text-gray-700 select-none">No Discount</span>
                         </div>
-                        <div class="flex items-center cursor-pointer discount-option" data-value="amount">
+                        <div class="flex items-center cursor-pointer discount-option" data-value="amount" dusk="discount-type-amount">
                             <input type="radio" name="discount_type" value="amount" class="sr-only discount-type-radio">
                             <div class="discount-radio-custom w-5 h-5 border-2 border-gray-300 rounded-full flex items-center justify-center mr-3 transition-all duration-200">
                                 <div class="w-2.5 h-2.5 bg-red-600 rounded-full opacity-0 transition-opacity duration-200"></div>
                             </div>
                             <span class="text-gray-700 select-none">Fixed Amount (₱)</span>
                         </div>
-                        <div class="flex items-center cursor-pointer discount-option" data-value="percentage">
+                        <div class="flex items-center cursor-pointer discount-option" data-value="percentage" dusk="discount-type-percentage">
                             <input type="radio" name="discount_type" value="percentage" class="sr-only discount-type-radio">
                             <div class="discount-radio-custom w-5 h-5 border-2 border-gray-300 rounded-full flex items-center justify-center mr-3 transition-all duration-200">
                                 <div class="w-2.5 h-2.5 bg-red-600 rounded-full opacity-0 transition-opacity duration-200"></div>
@@ -468,6 +476,7 @@
                         <input type="number" 
                                name="discount_value" 
                                id="discount_value"
+                               dusk="discount-value"
                                value="{{ old('discount_value') }}" 
                                min="0" 
                                step="0.01"
@@ -489,6 +498,7 @@
                     <input type="text" 
                            name="discount_reason" 
                            id="discount_reason"
+                           dusk="discount-reason"
                            value="{{ old('discount_reason') }}" 
                            disabled
                            placeholder="e.g., Senior citizen, Loyalty discount, etc."
@@ -511,7 +521,7 @@
                     </div>
                     <div class="flex justify-between items-center pt-2 border-t border-red-200 font-semibold">
                         <span class="text-red-800">Final Amount:</span>
-                        <span class="text-red-800" id="preview-final">₱0.00</span>
+                        <span class="text-red-800" id="preview-final" dusk="discount-preview-final">₱0.00</span>
                     </div>
                 </div>
             </div>
@@ -529,7 +539,7 @@
                        class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
                         <i class="fas fa-times mr-2"></i>Cancel
                     </a>
-                    <button type="submit" 
+                    <button type="submit" dusk="booking-submit"
                             class="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors shadow-sm">
                         <i class="fas fa-save mr-2"></i>Create Booking
                     </button>

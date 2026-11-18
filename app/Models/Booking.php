@@ -10,11 +10,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Booking extends Model
 {
     use SoftDeletes;
+
     protected $fillable = [
-        'booking_reference', 'venue_id', 'package_id', 'staff_id', 'client_name', 'client_email', 
-        'client_phone', 'booking_date', 'number_of_days', 'end_date', 'time_slots', 'total_amount', 
+        'booking_reference', 'venue_id', 'package_id', 'staff_id', 'client_name', 'client_email',
+        'client_phone', 'booking_date', 'number_of_days', 'end_date', 'time_slots', 'total_amount',
         'discount_amount', 'discount_percentage', 'discount_reason', 'original_amount',
-        'status', 'payment_status', 'notes', 'reminder_sent_at'
+        'status', 'payment_status', 'notes', 'reminder_sent_at',
+        'booking_platform_id', 'rate_per_night', 'platform_reference',
     ];
 
     protected $casts = [
@@ -25,7 +27,8 @@ class Booking extends Model
         'discount_amount' => 'decimal:2',
         'discount_percentage' => 'decimal:2',
         'original_amount' => 'decimal:2',
-        'reminder_sent_at' => 'datetime'
+        'rate_per_night' => 'decimal:2',
+        'reminder_sent_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -66,6 +69,30 @@ class Booking extends Model
         return $this->belongsTo(User::class, 'staff_id');
     }
 
+    /** The booking platform whose rate was used. Null means the regular rate. */
+    public function platform(): BelongsTo
+    {
+        return $this->belongsTo(BookingPlatform::class, 'booking_platform_id');
+    }
+
+    /** Client email is optional; without it no client emails are sent. */
+    public function hasClientEmail(): bool
+    {
+        return trim((string) $this->client_email) !== '';
+    }
+
+    /** Clients page key: the email, or "tel-<phone>" for clients without an email. */
+    public function getClientKeyAttribute(): string
+    {
+        return $this->hasClientEmail() ? (string) $this->client_email : 'tel-'.$this->client_phone;
+    }
+
+    /** "Regular" or the platform name, for views and reports. */
+    public function getRateSourceLabelAttribute(): string
+    {
+        return $this->platform?->name ?? 'Regular';
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
@@ -74,8 +101,8 @@ class Booking extends Model
     public function addons()
     {
         return $this->belongsToMany(VenueAddon::class, 'booking_addons')
-                    ->withPivot('quantity', 'price_at_booking')
-                    ->withTimestamps();
+            ->withPivot('quantity', 'price_at_booking')
+            ->withTimestamps();
     }
 
     public function getAddonsTotal()
@@ -91,7 +118,7 @@ class Booking extends Model
     public function applyDiscount($discountAmount = null, $discountPercentage = null, $reason = null)
     {
         // Store original amount if not already set
-        if (!$this->original_amount) {
+        if (! $this->original_amount) {
             $this->original_amount = $this->total_amount;
         }
 
@@ -107,7 +134,7 @@ class Booking extends Model
 
         $this->discount_reason = $reason;
         $this->total_amount = $this->original_amount - $this->discount_amount;
-        
+
         return $this;
     }
 
@@ -215,6 +242,6 @@ class Booking extends Model
      */
     public function isFullDay()
     {
-        return !$this->time_slots || empty($this->time_slots);
+        return ! $this->time_slots || empty($this->time_slots);
     }
 }

@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Venue extends Model
 {
     protected $table = 'venues_and_suites';
-    
+
     protected $fillable = [
         'name', 'room_number', 'type', 'description', 'capacity',
         'price_per_day', 'price_morning', 'price_afternoon', 'price_evening',
-        'amenities', 'images', 'is_active'
+        'amenities', 'images', 'is_active',
     ];
 
     protected $casts = [
@@ -30,6 +30,12 @@ class Venue extends Model
         return $this->hasMany(Booking::class);
     }
 
+    /** Per-platform nightly rates (suites only). price_per_day is the regular rate. */
+    public function platformRates(): HasMany
+    {
+        return $this->hasMany(SuitePlatformRate::class);
+    }
+
     public function packages(): HasMany
     {
         return $this->hasMany(VenuePackage::class);
@@ -44,13 +50,13 @@ class Venue extends Model
     {
         $query = $this->bookings()
             ->where('status', '!=', 'cancelled')
-            ->where(function($q) use ($startDate, $endDate) {
+            ->where(function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('booking_date', [$startDate, $endDate])
-                  ->orWhereBetween('end_date', [$startDate, $endDate])
-                  ->orWhere(function($q2) use ($startDate, $endDate) {
-                      $q2->where('booking_date', '<=', $startDate)
-                         ->where('end_date', '>=', $endDate);
-                  });
+                    ->orWhereBetween('end_date', [$startDate, $endDate])
+                    ->orWhere(function ($q2) use ($startDate, $endDate) {
+                        $q2->where('booking_date', '<=', $startDate)
+                            ->where('end_date', '>=', $endDate);
+                    });
             });
 
         if ($excludeBookingId) {
@@ -80,7 +86,7 @@ class Venue extends Model
             }
 
             // Specific time slots only conflict when they overlap.
-            if (!empty(array_intersect($requestedTimeSlots, $existingSlots))) {
+            if (! empty(array_intersect($requestedTimeSlots, $existingSlots))) {
                 return false;
             }
         }

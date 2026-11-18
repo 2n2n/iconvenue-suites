@@ -9,21 +9,11 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\VenueController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\PublicController;
 use Illuminate\Support\Facades\Route;
 
-// Public Routes
-Route::middleware(['public'])->group(function () {
-    Route::get('/', [PublicController::class, 'index'])->name('home');
-    Route::get('/venues', [PublicController::class, 'venues'])->name('venues');
-    Route::get('/suites', [PublicController::class, 'suites'])->name('suites');
-    Route::get('/venue/{id}', [PublicController::class, 'venueDetails'])->name('venue.details');
-    Route::get('/venue/{id}/addons', [PublicController::class, 'venueAddons'])->name('venue.addons');
-    Route::get('/venue/{id}/addons-data', [PublicController::class, 'venueAddonsData'])->name('venue.addons.data');
-    Route::get('/venue/{id}/calendar-data', [PublicController::class, 'venueCalendarData'])->name('venue.calendar.data');
-    Route::post('/check-availability', [PublicController::class, 'checkAvailability'])->name('check.availability');
-    Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
-});
+// No public website (turned off 2026-11-18, docs/decisions/2026-11-18-disable-public-website.md).
+// The home page is the staff sign-in; the guest middleware on /login sends signed-in users to the dashboard.
+Route::redirect('/', '/login')->name('home');
 
 // Auth Routes
 Route::middleware(['guest'])->group(function () {
@@ -62,7 +52,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Clients (Staff & Admin)
     Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
     Route::get('clients/{email}', [ClientController::class, 'show'])->name('clients.show');
-    Route::put('clients/{email}', [ClientController::class, 'update'])->name('clients.update');
 
     // Payments (Staff & Admin)
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -74,6 +63,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     // Admin Only Routes
     Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->group(function () {
+        // Client details (admin only; staff can list and view clients)
+        Route::put('clients/{email}', [ClientController::class, 'update'])->name('clients.update');
+
         // Venues Management
         Route::get('venues', [VenueController::class, 'indexVenues'])->name('venues.index');
         Route::get('venues/create', [VenueController::class, 'createVenue'])->name('venues.create');
@@ -89,6 +81,19 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('suites/{venue}/edit', [VenueController::class, 'editSuite'])->name('suites.edit');
         Route::put('suites/{venue}', [VenueController::class, 'updateSuite'])->name('suites.update');
         Route::delete('suites/{venue}', [VenueController::class, 'destroySuite'])->name('suites.destroy');
+
+        // Room Rates: every suite's regular + per-platform rates on one grid (admin only)
+        Route::get('rates', [\App\Http\Controllers\Admin\RoomRateController::class, 'index'])->name('rates.index');
+        Route::put('rates', [\App\Http\Controllers\Admin\RoomRateController::class, 'update'])->name('rates.update');
+        // Old per-suite Rates page → grid at that room
+        Route::get('suites/{venue}/rates', [\App\Http\Controllers\Admin\RoomRateController::class, 'legacySuiteRates'])->name('suites.rates.edit');
+
+        // Booking platforms (Agoda, Booking.com, …) — admin only
+        Route::get('booking-platforms', [\App\Http\Controllers\Admin\BookingPlatformController::class, 'index'])->name('booking-platforms.index');
+        Route::post('booking-platforms', [\App\Http\Controllers\Admin\BookingPlatformController::class, 'store'])->name('booking-platforms.store');
+        Route::put('booking-platforms/{platform}', [\App\Http\Controllers\Admin\BookingPlatformController::class, 'update'])->name('booking-platforms.update');
+        Route::patch('booking-platforms/{platform}/toggle', [\App\Http\Controllers\Admin\BookingPlatformController::class, 'toggle'])->name('booking-platforms.toggle');
+        Route::delete('booking-platforms/{platform}', [\App\Http\Controllers\Admin\BookingPlatformController::class, 'destroy'])->name('booking-platforms.destroy');
 
         Route::resource('staff', StaffController::class);
         Route::patch('staff/{staff}/toggle', [StaffController::class, 'toggleActive'])->name('staff.toggle');

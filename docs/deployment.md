@@ -23,7 +23,7 @@ Registering devices and inviting staff: [tailscale-guide.md](tailscale-guide.md)
 | Secrets | Secret Manager: `iconvenue-app-key`, `iconvenue-db-password` |
 | Jobs | `iconvenue-migrate` (each deploy), `iconvenue-reminders` (09:00 Manila), `iconvenue-complete-expired` (every 15 min), via Cloud Scheduler as SA `iconvenue-scheduler` |
 | Images | Artifact Registry `us-central1-docker.pkg.dev/icon-events-513902/iconvenue/app` (keeps the newest 3) |
-| Backups | nightly 02:00 Manila `mariadb-dump` → `gs://icon-events-513902-db-backups` (30 days), 7 days locally, daily disk snapshot (7 days) |
+| Backups | nightly 02:00 Manila **and before every deploy/rollback**: `mariadb-dump` → `gs://icon-events-513902-db-backups` (30 days), 7 days locally, daily disk snapshot (7 days). Deploy records in `deploys/` |
 | SSH | IAP (`35.235.240.0/20` → tcp:22): `gcloud compute ssh iconvenue-db --zone us-central1-a --project icon-events-513902 --tunnel-through-iap`. Tailscale SSH is enabled (`--ssh`) but the tailnet's ssh rule still needs checking (server reports no one allowed), so IAP is the working path |
 
 **Never in production:** `db:seed`, Dusk, `migrate:fresh` or `RefreshDatabase`. The prod entrypoint refuses to start
@@ -91,20 +91,58 @@ unless `APP_ENV=production`, and it never seeds.
 
 ## Routine deploy
 ```bash
-deploy/cloudrun-deploy.sh     # from the repo root; builds what's in your working tree
+deploy/cloudrun-deploy.sh     # from the repo root; builds what's in your working tree. Confirm before running.
 ```
-It builds the image with Cloud Build, runs `iconvenue-migrate` (`migrate --force`) and waits, then deploys the service.
-A startup probe on `/up` must pass before the new revision takes traffic. It also updates the scheduled jobs. Tags are
-`<timestamp>-<git sha>[-dirty]`.
+Steps, in order ([decision](decisions/2026-11-17-predeploy-backup-and-rollback.md)):
+1. **Current production.** Notes the revision serving traffic and its image.
+2. **Pre-deploy backup.** It pipes `deploy/backup-db.sh` to the VM over IAP SSH, which uploads
+   `iconvenue-predeploy-<tag>-<ts>.sql.gz` to the backup bucket. It also reads the applied migration count. **If either
+   step fails, nothing is deployed.**
+3. **Build** with Cloud Build.
+4. **Migrations.** Runs `iconvenue-migrate` (`migrate --force`), waits, and prints how many new migrations ran, or
+   "none to apply".
+5. **Service.** A startup probe on `/up` must pass before the new revision takes traffic. Traffic is then set
+   `--to-latest`, which also un-pins it after a rollback.
+6. **Scheduled jobs.** Updated to the new image.
+7. **Deploy record.** Written to `gs://icon-events-513902-db-backups/deploys/<tag>.json`:
+   - the previous revision and image;
+   - the backup object;
+   - the migration counts before and after, and `migrated`;
+   - the status.
 
-After the deploy:
-- it checks that run.app returns **404** from the internet;
-- if your machine is connected to the tailnet, it also checks the ts.net `/up`. It finds the CLI on PATH or at
-  `/Applications/Tailscale.app/Contents/MacOS/Tailscale`.
+   If a step after the backup fails, the record is still written with `status: failed-at-<step>`.
+8. **Health check.** run.app must return **404** from the internet. If this machine is on the tailnet, ts.net `/up`
+   must return 200.
 
-**Rollback:** `gcloud run services update-traffic iconvenue --region us-central1 --project icon-events-513902 --to-revisions <previous-revision>=100`
-(list with `gcloud run revisions list --service iconvenue --region us-central1 --project icon-events-513902`). If a
-migration has to be undone, restore the pre-change dump.
+Tags are `<timestamp>-<git sha>[-dirty]`.
+
+## Rollback
+Use the **`/rollback-prod`** skill (`.claude/skills/rollback-prod/scripts/rollback-prod.sh`).
+- **Dry run.** `rollback-prod.sh [<tag>]` prints the plan for the newest deploy (or `<tag>`) and changes nothing.
+- **Execute.** `--yes` runs these steps:
+  1. safety backup `prerollback-<tag>`;
+  2. traffic to the previous revision;
+  3. `iconvenue-migrate`, `iconvenue-reminders` and `iconvenue-complete-expired` re-pointed to the previous image;
+  4. **DB restore of the pre-deploy backup, only if that deploy applied migrations** (or with `--restore-db`). Data
+     written since the deploy is lost;
+  5. `/up` check, from this Mac over the tailnet, or from the VM.
+- **How the restore works.**
+  1. It downloads the dump on your machine and checks it.
+  2. It streams the dump to the VM, which verifies it in a temp file.
+  3. Only then does the VM drop and recreate `iconvenue` (utf8mb4_unicode_ci), load the dump, and check the table
+     count and the migration count.
+
+  The VM's service account can only *create* backup objects, not read them, so downloads go through your gcloud login.
+- **Test a restore without touching production:** `rollback-prod.sh [<tag>] --test-restore restore_check`.
+- **Limits:**
+  - records and backups are deleted after 30 days;
+  - Artifact Registry keeps only the 3 newest images;
+  - the app shows errors for the seconds the restore takes;
+  - uploads (images) aren't rolled back.
+- **Manual equivalent:**
+  1. `gcloud run services update-traffic iconvenue --region us-central1 --project icon-events-513902 --to-revisions <rev>=100`.
+     List revisions with `gcloud run revisions list --service iconvenue --region us-central1 --project icon-events-513902`.
+  2. Restore the dump as in "Backups and restore".
 
 ## Mail (Resend)
 1. In Resend, verify a **sending domain** and create an API key.
@@ -155,8 +193,18 @@ This also upgrades Tailscale (its repo is installed) and nginx.
 | VM health: "Tailscale SSH enabled, but access controls don't allow anyone" | The tailnet policy's `ssh` rule for `tag:iconvenue-prod` isn't taking effect | Open: re-check the `ssh` block in the policy. IAP SSH works meanwhile |
 
 ## Backups and restore
-- **Where:** `/var/backups/iconvenue/*.sql.gz` on the VM (7 days), `gs://icon-events-513902-db-backups` (30 days),
-  disk snapshots (7 days, `us-central1`). Log: `/var/log/iconvenue-backup.log`. On demand: `sudo /opt/iconvenue-db/backup-db.sh`.
+- **Where:**
+  - `/var/backups/iconvenue/*.sql.gz` on the VM (7 days);
+  - `gs://icon-events-513902-db-backups` (30 days, lifecycle rule);
+  - disk snapshots (7 days, `us-central1`).
+- **Names:**
+  - nightly `iconvenue-<ts>.sql.gz`;
+  - before each deploy `iconvenue-predeploy-<tag>-<ts>.sql.gz`;
+  - before each rollback `iconvenue-prerollback-<tag>-<ts>.sql.gz`.
+  - Deploy records live in `deploys/<tag>.json` in the same bucket.
+- **Log:** `/var/log/iconvenue-backup.log`.
+- **On demand:** `sudo /opt/iconvenue-db/backup-db.sh [label]`. Deploys and rollbacks pipe the repo copy instead, so
+  the installed copy is used only by the nightly cron.
 - **Restore a dump** (overwrites production; take a fresh backup first). On the VM:
   ```bash
   gcloud storage cp gs://icon-events-513902-db-backups/iconvenue-YYYYMMDD-HHMMSS.sql.gz /tmp/

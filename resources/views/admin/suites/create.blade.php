@@ -36,7 +36,7 @@
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Price per 22 Hours *</label>
+                <label class="block text-gray-700 font-semibold mb-2">Regular Rate (per night) *</label>
                 <input type="number" name="price_per_day" value="{{ old('price_per_day') }}" required min="0" step="0.01"
                     class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
             </div>

@@ -9,6 +9,7 @@ use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Collection;
+use Laravel\Dusk\Browser;
 use Laravel\Dusk\TestCase as BaseTestCase;
 use PHPUnit\Framework\Attributes\BeforeClass;
 use RuntimeException;
@@ -37,6 +38,25 @@ abstract class DuskTestCase extends BaseTestCase
                 "Refusing to run Dusk against database [{$database}]. Run via: docker compose exec dusk-app php artisan dusk"
             );
         }
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        /*
+         * The admin layout fades its content in (.fade-in, 0.5 s) and slides the sidebar in (.slide-in).
+         * WebDriver reads no text from elements still at opacity 0, so text assertions made right
+         * after a page load flake. Call this after every navigation before reading the page.
+         */
+        Browser::macro('waitForPageToSettle', function (int $seconds = 5): Browser {
+            /** @var Browser $this */
+            return $this->waitUntil(
+                "document.readyState === 'complete' && document.getAnimations()"
+                .".every(a => !['fadeIn', 'slideIn'].includes(a.animationName) || a.playState === 'finished')",
+                $seconds
+            );
+        });
     }
 
     /**

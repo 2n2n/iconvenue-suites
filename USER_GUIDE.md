@@ -8,11 +8,11 @@ This guide explains how the booking system works for **clients**, **staff**, and
 
 | Role | Who they are | What they do |
 |------|----------------|--------------|
-| **Client** | Anyone visiting the public website | Browse venues and suites, check availability, get price estimates, and contact the business to book |
+| **Client** | Guests and event organisers | Contact the business by phone, email or social media to book; they don't use the app |
 | **Staff** | Front-desk or operations team | Create bookings, record payments, verify payments, manage clients |
 | **Admin** | Business owner or manager | Everything staff can do, plus venues, suites, packages, add-ons, staff accounts, settings, and reports |
 
-**Staff and admin** log in at `/login`. **Clients** use the public website — no account is required.
+**Staff and admin** log in at `/login`; opening the app's home page shows the same sign-in page. Clients don't use the app.
 
 ---
 
@@ -20,10 +20,8 @@ This guide explains how the booking system works for **clients**, **staff**, and
 
 ```mermaid
 flowchart LR
-    A[Client browses website] --> B[Selects venue / suite & options]
-    B --> C[Checks availability & price]
-    C --> D[Contacts business to book]
-    D --> E[Staff creates booking in admin]
+    A[Client contacts the business] --> B[Staff checks availability & price]
+    B --> E[Staff creates booking in admin]
     E --> F[Client pays]
     F --> G[Staff records & verifies payment]
     G --> H[Booking confirmed]
@@ -33,70 +31,13 @@ flowchart LR
 
 ---
 
-## Part 1 — Client Flow (Public Website)
+## Part 1 — Clients
 
-### 1. Browse venues and suites
+Clients do **not** use the app. There is no public website: opening the app shows the staff **sign-in** page.
 
-From the homepage you can:
-
-- View the **carousel** and featured spaces
-- Open **Venues** for event spaces (weddings, parties, corporate events, etc.)
-- Open **Suites** for overnight stays
-- Visit the **Contact** page for phone, email, WhatsApp, and social links
-
-### 2. View details and pricing
-
-On a venue or suite detail page you will see:
-
-- Photos, description, capacity, and amenities
-- **Pricing options** (for venues):
-  - **Full Day** — separate full-day rate
-  - **Morning** (8:00 AM – 12:00 PM)
-  - **Afternoon** (1:00 PM – 5:00 PM)
-  - **Evening** (6:00 PM – 10:00 PM)
-  - **Event packages** (e.g. Birthday, Wedding) if configured
-- **Add-ons** (catering, decorations, equipment, etc.) with optional stock limits
-
-> **Note:** Full day price and time-slot prices are set independently. Selecting all three time slots uses the full-day rate, not the sum of the slots.
-
-### 3. Choose a booking option
-
-On the venue page:
-
-1. Pick a **date** on the calendar (available dates are shown in green)
-2. Select **Full Day**, individual **time slots**, or an **event package**
-3. Optionally add **add-ons** and quantities
-4. Review the **price summary** at the bottom
-
-**Time slot rules:**
-
-- You can select multiple slots (e.g. Morning + Afternoon)
-- Selecting all three slots converts to **Full Day** pricing
-- **Morning + Evening** cannot be combined (afternoon must be included for that pattern)
-
-### 4. Check availability
-
-Click **Check Availability** to confirm your selected date and option are still free before contacting the business.
-
-### 5. Contact to book
-
-Clients do **not** complete payment on the website. To proceed:
-
-- Click **Contact to Book**
-- Reach out via **phone**, **email**, **WhatsApp**, **Messenger**, or the **online booking form** (if configured)
-
-The contact message can include your selected option and estimated total so staff can process the request quickly.
-
-### 6. After you contact the business
-
-Staff will:
-
-1. Create the official booking in the admin panel
-2. Send you a **booking reference** (e.g. `IVS-2026-XXXX`)
-3. Guide you through payment
-4. Confirm the booking once payment is verified
-
-You may receive **email updates** when your booking status or payment status changes, and a **reminder email** about 24 hours before your event.
+Clients contact the business by phone, email or social media to ask about availability and prices. Staff check the
+admin **Calendar** and create the booking for them (Part 2). Clients receive booking, payment and reminder emails
+when staff enter their email.
 
 ---
 
@@ -116,7 +57,8 @@ Shows a quick overview of bookings, revenue, and recent activity.
    - Filter by Venues, Suites, or All
    - For **venues**: choose Full Day or specific time slots (and optional package)
    - For **suites**: standard stay is check-in 2:00 PM, check-out 12:00 PM next day; set number of days if needed
-2. **Enter client details** — name, email, phone
+   - For **suites**, choose the **Rate**: *Regular rate* (walk-in / direct) or the booking platform the guest booked through (e.g. Agoda, Booking.com). Each option shows its nightly price for the selected room. The price uses that platform's rate for the room; if the room has no rate for that platform, the regular rate is used and the form says so. Optionally enter the **Platform reference** (the platform's booking ID). Discounts still apply on top.
+2. **Enter client details** — name and phone (required), email (optional — without it the client gets no confirmation, payment or reminder emails)
 3. **Set booking date** and duration
 4. **Add add-ons** if applicable
 5. **Apply discount** (optional) — amount or percentage with reason
@@ -186,7 +128,7 @@ Partial verified payments set payment status to **Partial** until the balance is
 
 **Path:** Clients
 
-- View all clients grouped by email
+- View all clients grouped by email (clients without an email are grouped by phone and marked "No email")
 - See their booking history and contact details
 - Update client information
 
@@ -204,8 +146,33 @@ Admins have access to everything staff has, plus:
 
 - Create and edit venues and suites (name, capacity, description, images, amenities)
 - Set **Full Day Price** and **time-slot prices** separately
+- Set each suite's **Regular rate (per night)**
+- See **Room Rates** below to change suite prices.
 - Manage **event packages** per venue (pricing, inclusions, time-based package rates)
 - Toggle availability
+
+### Room Rates
+
+**Path:** Room Rates (admin only)
+
+One screen with every suite (rows) and its **Regular** rate plus one column per booking platform (Agoda, Booking.com, …). Use it whenever management changes prices, for example for a promo.
+
+1. Type the new prices straight into the cells. Changed cells turn yellow; hover to see the old price.
+2. To give several rooms the same change, tick the rooms, pick the column and an action (**Set to ₱**, raise/lower by **₱** or **%**) and press **Apply**. This only fills the cells.
+3. Press **Save changes** to save everything at once, or **Discard** to undo your edits. Nothing is saved until you press Save.
+
+- An **empty platform cell** means that room uses its regular rate on that platform (the regular price is shown in grey). Clear a cell to go back to the regular rate.
+- The regular rate can't be empty.
+- New prices apply to **new bookings only**; existing bookings keep the rate they were booked at.
+- **Manage platforms** (top right) opens the platform list.
+
+### Booking platforms
+
+**Path:** Room Rates → Manage platforms (admin only)
+
+- Agoda and Booking.com are set up by default
+- Add new platforms (e.g. Expedia), rename them, or change their display order
+- **Deactivate** a platform to stop staff from selecting it for new bookings; a platform already used by bookings cannot be deleted
 
 ### Add-ons
 
@@ -232,7 +199,8 @@ Admins have access to everything staff has, plus:
 
 - Filter by **date range**
 - View booking statistics, revenue, top venues/suites, and payment records
-- **Export to Excel** (CSV) — includes booking details, amounts, payment methods, and **reference numbers**
+- **By Booking Platform**: bookings, booked total and verified revenue per rate source (Regular, Agoda, Booking.com, …)
+- **Export to Excel** (CSV) — includes booking details, amounts, **rate / platform**, rate per night, platform reference, payment methods, and **reference numbers**
 
 ---
 
@@ -261,7 +229,7 @@ Admins have access to everything staff has, plus:
 
 ### Venue event (wedding)
 
-1. **Client** browses venues → selects Full Day + add-ons → checks availability → contacts via WhatsApp
+1. **Client** calls or messages the business asking for a Full Day wedding with add-ons → **Staff** checks the calendar
 2. **Staff** creates booking with client details, wedding package, and add-ons
 3. **Client** sends down payment via GCash
 4. **Staff** records partial payment with reference number → verifies after checking account
@@ -288,7 +256,7 @@ Clients may receive emails for:
 - **Payment verified** or **payment rejected**
 - **Booking reminder** (about 24 hours before the event)
 
-Ensure client email addresses are correct when creating bookings.
+Ensure client email addresses are correct when creating bookings. If a booking has no email, no client emails are sent and the booking details show a **No email** badge.
 
 ---
 
@@ -296,7 +264,6 @@ Ensure client email addresses are correct when creating bookings.
 
 **For clients**
 
-- Use the calendar on the venue page to avoid unavailable dates
 - Keep your **booking reference** handy when paying or following up
 - Send payment proof with the same reference number staff will record
 
@@ -311,7 +278,7 @@ Ensure client email addresses are correct when creating bookings.
 
 - Set full-day and time-slot prices independently when editing venues
 - Review **Reports** monthly and export to Excel for accounting
-- Keep contact settings and carousel images up to date on the public site
+- Contact settings and carousel images are only shown on the public website, which is turned off for now
 
 ---
 

@@ -12,6 +12,14 @@ The written record of what we planned, discussed and agreed. Every approved plan
 - `modules/<module>.md` — living docs per module (create when a module first changes)
 
 ### Decisions (newest first)
+- [2026-11-18 — Public website turned off; the home page is the staff sign-in](decisions/2026-11-18-disable-public-website.md)
+- [2026-11-18 — The login lockout counts failed sign-ins only](decisions/2026-11-18-login-throttle-counts-failures-only.md)
+- [2026-11-18 — Only admins can update client details](decisions/2026-11-18-admin-only-client-update.md)
+- [2026-11-18 — Editing a pending booking keeps it Pending](decisions/2026-11-18-edit-keeps-pending-status.md)
+- [2026-11-17 — Client email optional on bookings](decisions/2026-11-17-optional-client-email.md)
+- [2026-11-17 — Pre-deploy database backup and `/rollback-prod`](decisions/2026-11-17-predeploy-backup-and-rollback.md)
+- [2026-11-17 — Room Rates workspace (edit all suite and platform rates on one screen)](decisions/2026-11-17-room-rates-workspace.md)
+- [2026-11-17 — Per-platform room rates (Regular / Agoda / Booking.com)](decisions/2026-11-17-suite-platform-rates.md)
 - [2026-11-06 — Tailnet-only access: Tailscale gateway on the DB VM → Cloud Run](decisions/2026-11-06-tailnet-only-access.md)
 - [2026-11-06 — Production on Cloud Run + MariaDB on a free-tier VM (public, no Tailscale)](decisions/2026-11-06-production-cloud-run.md)
 - [2026-11-06 — Production deployment on GCP (private, Tailscale-only)](decisions/2026-11-06-production-deployment-gcp.md) — superseded

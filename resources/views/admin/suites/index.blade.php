@@ -29,7 +29,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Room No.</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Capacity</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price/Day</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Regular Rate / Night</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
@@ -86,6 +86,14 @@
                            class="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-semibold rounded-lg hover:shadow-lg transition-all duration-200" 
                            title="Edit Suite">
                             <i class="fas fa-edit mr-1"></i>Edit
+                        </a>
+
+                        <!-- Platform Rates Button -->
+                        <a href="{{ route('admin.rates.index') }}#suite-{{ $suite->id }}"
+                           dusk="suite-rates-{{ $suite->id }}"
+                           class="inline-flex items-center px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-semibold rounded-lg hover:shadow-lg transition-all duration-200"
+                           title="Rates per booking platform">
+                            <i class="fas fa-tags mr-1"></i>Rates
                         </a>
                         
                         <!-- Delete Button -->

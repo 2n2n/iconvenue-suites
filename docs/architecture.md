@@ -28,6 +28,15 @@ Route → Controller → FormRequest (validate + authorize)
 
 **Modules:** Booking, Venue (venues, suites, packages), Addon, Payment, Client, Staff, Report, Settings, Carousel, Media.
 
+**Built on the target architecture so far:**
+- `Services/Staff/AdminAccountService`.
+- `Services/Venue/SuiteRateService` with `Admin/RoomRateController` and `Requests/Venue/UpdateRoomRatesRequest`.
+- `Services/Settings/BookingPlatformService` with `Admin/BookingPlatformController` and
+  `Requests/Settings/*BookingPlatformRequest`.
+
+The legacy `BookingController` (store/update) and `ReportController` call into `SuiteRateService` through targeted
+edits. See [modules/venue.md](modules/venue.md).
+
 ## Production topology (as of 2026-11-06)
 See [deployment.md](deployment.md) and [the decision](decisions/2026-11-06-production-cloud-run.md).
 
@@ -44,9 +53,12 @@ iconvenue-db: nightly mariadb-dump → gs://icon-events-513902-db-backups (via P
 ```
 - **The whole app is reachable only from registered tailnet devices**
   ([decision](decisions/2026-11-06-tailnet-only-access.md), [guide](tailscale-guide.md)).
+  - There are no public routes: `/` redirects to `/login` (route name `home`), and signed-in users go on to the
+    dashboard. `PublicController`, `views/public/*` and the `public` middleware alias are kept but unrouted
+    ([decision](decisions/2026-11-18-disable-public-website.md)).
   - `APP_PUBLIC_HOST` makes the prod entrypoint set `X-Forwarded-Host` in Apache, so Laravel builds every URL and
     redirect on the ts.net host.
-  - `POST /login` is rate-limited (`throttle:login`, 5/min per email + IP; behind the gateway this is effectively per
+  - `POST /login` is rate-limited (`throttle:login`, 5 failed attempts/min per email + IP, successful sign-ins don't count; behind the gateway this is effectively per
     email).
 - `trustProxies(at: '*')` in `bootstrap/app.php` gives Laravel the real client IP and scheme behind Cloud Run.
 - `QUEUE_CONNECTION=sync` (mail is synchronous). Sessions, cache and the login limiter use the `database` driver,

@@ -14,13 +14,13 @@ A booking system for a property that rents two kinds of spaces:
 
 Users:
 
-- **Client (public)** — browses venues and suites, checks availability and estimated price, then contacts the business. Clients do not create bookings themselves.
+- **Client** — contacts the business (phone, email, social) to ask about availability and price. Clients have no access to the app and do not create bookings themselves. *(The public website, where clients used to browse venues and suites, is turned off since 2026-11-18.)*
 - **Staff** — creates and manages bookings, records payments, manages clients, toggles availability.
 - **Admin** — everything staff can do, plus venues/suites, packages, add-ons, staff accounts, settings, reports, homepage carousel.
 
 ## Core business process
 
-1. Client asks the business about availability for a date. *(Since 2026-11-06 the website is reachable only from registered staff devices on the business's Tailscale network, so clients no longer browse it themselves; staff check availability for them.)*
+1. Client asks the business about availability for a date. *(Since 2026-11-06 the website is reachable only from registered staff devices on the business's Tailscale network, so clients no longer browse it themselves; staff check availability for them. Since 2026-11-18 the public pages are turned off entirely and the home page is the staff sign-in.)*
 2. Client contacts the business (phone, email, social, or Google Form).
 3. Staff creates the booking → status **Pending**, payment **Unpaid**.
 4. Staff records payment(s): partial or full. Payments are verified by staff.
@@ -28,12 +28,13 @@ Users:
 6. After the stay/event ends → booking becomes **Completed** (currently automatic, or manually by staff). *Approved change: staff-only completion — see "Approved rules" below.*
 7. Booking may be **Cancelled** at any time; tracked add-on stock is returned.
 
-Clients receive email on booking creation, status changes, payment status changes, and a reminder the day before.
+Clients receive email on booking creation, status changes, payment status changes, and a reminder the day before. The client email is optional: staff may leave it empty (e.g. walk-ins), and then the client receives no emails; such clients are identified by phone.
 
 ## Booking rules — Suites (current)
 
 - Standard stay: **22 hours — check-in 2:00 PM, check-out 12:00 PM the next day.**
-- Price: one flat rate per night (price per day × number of days). No time-of-day pricing.
+- Price: one flat rate per night × number of days. No time-of-day pricing.
+- Each suite has a **regular rate** and, optionally, a rate per **booking platform** (e.g. Agoda, Booking.com). When staff create a booking they select the rate source (Regular or a platform); a platform without a rate for that suite falls back to the regular rate. The rate used is stored on the booking, so later rate changes never alter existing bookings. An optional platform reference (the platform's confirmation number) can be recorded. Only admin manages platforms and rates, all on one Room Rates screen; rates can be changed at any time (e.g. for a promo) and changes apply to new bookings only. The public site shows the regular rate.
 - Multi-night stays: staff sets the number of days.
 - Same-day walk-in bookings are allowed if the suite is free.
 - Availability is by calendar date: one booking occupies the suite for the whole date(s); no two bookings can share a date.
@@ -50,7 +51,7 @@ Clients receive email on booking creation, status changes, payment status change
 
 ## Pricing & payments
 
-- Total = venue/suite amount + add-ons − discount (fixed amount or percentage, with a reason).
+- Total = venue/suite amount + add-ons − discount (fixed amount or percentage, with a reason). For suites, the base amount uses the selected rate source (regular or booking platform); discounts apply on top of it.
 - Add-ons can track stock; stock is reduced at booking and returned on cancellation.
 - Payments cannot exceed the remaining balance; "Full Payment" must equal the balance exactly.
 
@@ -59,7 +60,7 @@ Clients receive email on booking creation, status changes, payment status change
 - Suites are single-occupancy per date — a suite cannot hold more than one booking on the same date.
 - Venue slots are fixed times, not custom hours.
 - Booking reference format: IVS-YYYY-XXXX.
-- Bookings are staff-created only. The website (including the availability and estimate pages) is internal: only registered staff devices can open it (since 2026-11-06).
+- Bookings are staff-created only. The website (including the availability and estimate pages) is internal: only registered staff devices can open it (since 2026-11-06). There are no public pages: opening the site shows the staff sign-in, and guests have no availability, estimate or booking-request page (since 2026-11-18).
 
 ## Initiative: Short-time stays (3-hour blocks) with extensions
 
@@ -133,3 +134,10 @@ Extensions, check-out and overstay (staff and admin, no approval step):
 - 2026-09-30 — No automatic completion for any booking; staff check-out; "Checked out – balance due" until paid.
 - 2026-09-30 — Overnight check-out fixed to 12 PM the day after the last night for new bookings only; existing records unchanged.
 - 2026-11-06 — Whole website restricted to registered devices (Tailscale tailnet); clients no longer browse availability online and contact staff instead. See `docs/decisions/2026-11-06-tailnet-only-access.md`.
+- 2026-11-17 — Per-platform suite rates: admin manages a list of booking platforms and a nightly rate per suite per platform; staff pick the rate source when booking (fallback to regular rate); discounts still apply; platform reference recorded; reports show bookings and revenue by platform. Suites only. See `docs/decisions/2026-11-17-suite-platform-rates.md`.
+- 2026-11-17 — Room Rates workspace: all suite regular and platform rates edited on one screen and saved at once. A "promo" is a manual rate change; no special promotion features (date ranges, buy 1 take 1, promo codes) and no change history. See `docs/decisions/2026-11-17-room-rates-workspace.md`.
+- 2026-11-17 — Client email optional on bookings: no email → no client notifications (shown as a badge); clients without email are grouped by phone. See `docs/decisions/2026-11-17-optional-client-email.md`.
+- 2026-11-18 — Bug fix: editing a booking keeps its current status (Pending is now selectable on edit); a pending booking is no longer confirmed by an edit. See `docs/decisions/2026-11-18-edit-keeps-pending-status.md`.
+- 2026-11-18 — Only admins can update client details (name, email, phone); staff can view clients. Security fix: the update route was reachable by staff. See `docs/decisions/2026-11-18-admin-only-client-update.md`.
+- 2026-11-18 — Login lockout counts failed sign-ins only (5 per minute per email); successful sign-ins never lock an account out. See `docs/decisions/2026-11-18-login-throttle-counts-failures-only.md`.
+- 2026-11-18 — Public website turned off for now: the home page is the staff sign-in, and guests have no way to browse, check availability or send a booking request. See `docs/decisions/2026-11-18-disable-public-website.md`.

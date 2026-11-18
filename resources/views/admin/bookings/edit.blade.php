@@ -45,7 +45,8 @@
                                 data-price-morning="{{ $venue->price_morning ?? 0 }}"
                                 data-price-afternoon="{{ $venue->price_afternoon ?? 0 }}"
                                 data-price-evening="{{ $venue->price_evening ?? 0 }}"
-                                class="venue-option venue-type-{{ $venue->type }}" 
+                                data-platform-rates='@json($venue->platformRates->pluck('price_per_night', 'booking_platform_id')->map(fn ($p) => (float) $p))'
+                                class="venue-option venue-type-{{ $venue->type }}"
                                 {{ $booking->venue_id == $venue->id ? 'selected' : '' }}>
                             {{ $venue->name }}
                         </option>
@@ -67,10 +68,13 @@
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Status *</label>
-                <select name="status" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
-                    <option value="confirmed" {{ $booking->status == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                    <option value="cancelled" {{ $booking->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                    <option value="completed" {{ $booking->status == 'completed' ? 'selected' : '' }}>Completed</option>
+                @php $currentStatus = old('status', $booking->status); @endphp
+                <select name="status" required dusk="booking-status" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                    {{-- Pending must be listed (and pre-selected) or the browser submits "confirmed" for pending bookings --}}
+                    <option value="pending" {{ $currentStatus == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="confirmed" {{ $currentStatus == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                    <option value="cancelled" {{ $currentStatus == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    <option value="completed" {{ $currentStatus == 'completed' ? 'selected' : '' }}>Completed</option>
                 </select>
             </div>
 
@@ -81,9 +85,11 @@
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Client Email *</label>
-                <input type="email" name="client_email" value="{{ old('client_email', $booking->client_email) }}" required 
+                <label class="block text-gray-700 font-semibold mb-2">Client Email (optional)</label>
+                <input type="email" name="client_email" value="{{ old('client_email', $booking->client_email) }}" dusk="client-email" 
                     class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                <p class="text-xs text-gray-500 mt-1">Optional. Needed for the booking confirmation, payment and reminder emails.</p>
+                @error('client_email')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
             </div>
 
             <div>
@@ -107,6 +113,11 @@
                     <i class="fas fa-info-circle mr-1"></i>
                     Price will be calculated per day
                 </p>
+
+                @include('admin.bookings.partials.rate-source-fields', [
+                    'selectedPlatformId' => old('booking_platform_id', $booking->booking_platform_id),
+                    'platformReference' => old('platform_reference', $booking->platform_reference),
+                ])
             </div>
 
             <div id="timeSlotField">
@@ -275,9 +286,20 @@
                 let detail = '';
 
                 if (venueType === 'suite') {
-                    const base = parseFloat(selectedOption.getAttribute('data-price') || 0);
+                    // Mirrors BookingController@update: keep the booked rate while suite + rate source are unchanged.
+                    const booked = @json(['venueId' => $booking->venue_id, 'platformId' => $booking->booking_platform_id, 'rate' => $booking->rate_per_night !== null ? (float) $booking->rate_per_night : null]);
+                    const nightly = window.getSuiteNightlyRate(selectedOption);
+                    const platformSel = document.getElementById('booking_platform_id')?.value || '';
+                    const sameSource = booked.rate !== null
+                        && String(booked.venueId) === String(venueId)
+                        && String(booked.platformId ?? '') === String(platformSel);
+                    if (sameSource) {
+                        const note = document.getElementById('rateFallbackNote');
+                        if (note) note.style.display = 'none';
+                    }
+                    const base = sameSource ? booked.rate : nightly.rate;
                     price = base * days;
-                    label = days > 1 ? `Suite rental (${days} days)` : 'Suite rental (22 hours)';
+                    label = days > 1 ? `Suite rental — ${nightly.label} (${days} days)` : `Suite rental — ${nightly.label} (22 hours)`;
                     detail = days > 1 ? `₱${base.toLocaleString('en-PH', {minimumFractionDigits: 2})} × ${days} days` : 'Check-in 2PM → Check-out 12PM';
                 } else {
                     const isMultiple = document.querySelector('input[name="time_slot_type"][value="multiple"]')?.checked;
@@ -408,6 +430,7 @@
             venueSelect.addEventListener('change', updateFieldsBasedOnVenue);
             packageSelect.addEventListener('change', () => { updateTimeSlotPrices(); updatePriceSummary(); });
             if (numberOfDaysInput) numberOfDaysInput.addEventListener('input', updatePriceSummary);
+            document.getElementById('booking_platform_id')?.addEventListener('change', updatePriceSummary);
 
             // ── Init ────────────────────────────────────────────────────
             updateFieldsBasedOnVenue();
@@ -445,12 +468,12 @@
 
         <div class="mt-6">
             <label class="block text-gray-700 font-semibold mb-2">Notes</label>
-            <textarea name="notes" rows="4" 
+            <textarea name="notes" rows="4" dusk="booking-notes-input"
                 class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">{{ old('notes', $booking->notes) }}</textarea>
         </div>
 
         <div class="mt-8 flex space-x-4">
-            <button type="submit" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition">
+            <button type="submit" dusk="booking-update" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition">
                 Update Booking
             </button>
             <a href="{{ route('admin.bookings.show', $booking) }}" class="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition">
