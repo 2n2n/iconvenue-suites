@@ -55,7 +55,7 @@ iconvenue-db: nightly mariadb-dump → gs://icon-events-513902-db-backups (via P
   ([decision](decisions/2026-11-06-tailnet-only-access.md), [guide](tailscale-guide.md)).
   - `APP_PUBLIC_HOST` makes the prod entrypoint set `X-Forwarded-Host` in Apache, so Laravel builds every URL and
     redirect on the ts.net host.
-  - `POST /login` is rate-limited (`throttle:login`, 5/min per email + IP; behind the gateway this is effectively per
+  - `POST /login` is rate-limited (`throttle:login`, 5 failed attempts/min per email + IP, successful sign-ins don't count; behind the gateway this is effectively per
     email).
 - `trustProxies(at: '*')` in `bootstrap/app.php` gives Laravel the real client IP and scheme behind Cloud Run.
 - `QUEUE_CONNECTION=sync` (mail is synchronous). Sessions, cache and the login limiter use the `database` driver,

@@ -99,7 +99,7 @@
                 
                 <!-- Profile Dropdown -->
                 <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" class="flex items-center space-x-3 focus:outline-none hover:bg-gray-50 rounded-lg px-4 py-2 transition-all duration-200">
+                    <button @click="open = !open" dusk="profile-menu" class="flex items-center space-x-3 focus:outline-none hover:bg-gray-50 rounded-lg px-4 py-2 transition-all duration-200">
                         @if(auth()->user()->profile_image)
                         <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" 
                              alt="Profile" 
@@ -145,7 +145,7 @@
                         
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
-                            <button type="submit" 
+                            <button type="submit" dusk="logout-button" 
                                     class="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150">
                                 <i class="fas fa-sign-out-alt mr-3 w-5"></i>
                                 <span>Logout</span>

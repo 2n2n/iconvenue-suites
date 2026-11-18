@@ -139,3 +139,4 @@ Extensions, check-out and overstay (staff and admin, no approval step):
 - 2026-11-17 — Client email optional on bookings: no email → no client notifications (shown as a badge); clients without email are grouped by phone. See `docs/decisions/2026-11-17-optional-client-email.md`.
 - 2026-11-18 — Bug fix: editing a booking keeps its current status (Pending is now selectable on edit); a pending booking is no longer confirmed by an edit. See `docs/decisions/2026-11-18-edit-keeps-pending-status.md`.
 - 2026-11-18 — Only admins can update client details (name, email, phone); staff can view clients. Security fix: the update route was reachable by staff. See `docs/decisions/2026-11-18-admin-only-client-update.md`.
+- 2026-11-18 — Login lockout counts failed sign-ins only (5 per minute per email); successful sign-ins never lock an account out. See `docs/decisions/2026-11-18-login-throttle-counts-failures-only.md`.
